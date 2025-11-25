@@ -1,0 +1,10 @@
+{
+  "user-prompt-submit-hook": {
+    "enabled": false,
+    "command": "if [[ \"$PROMPT\" =~ commit ]]; then echo 'REMINDER: Consider running /pre-commit to validate your changes before committing'; fi"
+  },
+  "tool-use-hook": {
+    "enabled": false,
+    "command": ""
+  }
+}
