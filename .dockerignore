@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist
+build
+coverage
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Docker files (prevent recursive copies)
+Dockerfile
+docker-compose*.yml
+
+# Documentation
+*.md
+!packages/shared/src/**/*.md
+
+# Test files
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Development tools
+.eslintrc*
+.prettierrc*
+.prettierignore
+vitest.config.*
+tsconfig.tsbuildinfo
+
+# Claude
+.claude

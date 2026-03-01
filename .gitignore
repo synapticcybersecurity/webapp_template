@@ -62,7 +62,7 @@ Thumbs.db
 prisma/migrations/.migration_lock
 
 # Docker
-.dockerignore
+# (keep .dockerignore tracked — it's needed for builds)
 
 # Temporary files
 tmp/

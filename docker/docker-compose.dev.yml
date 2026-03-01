@@ -1,0 +1,20 @@
+# =============================================================================
+# Development Overrides
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This file starts only the infrastructure services (Postgres, Redis, pgAdmin)
+# for local development. Run the backend and frontend directly with npm run dev.
+# =============================================================================
+
+services:
+  # Disable application services in dev — run them locally with hot reload
+  backend:
+    profiles:
+      - disabled
+  frontend:
+    profiles:
+      - disabled
+
+  # Enable pgAdmin by default in dev (no profile restriction)
+  pgadmin:
+    profiles: []

@@ -6,61 +6,48 @@ A production-ready, full-stack web application template built with modern techno
 
 - **Authentication & Authorization**
   - Email/password authentication with email verification
+  - Password reset flow with Better Auth built-in endpoints
   - Session-based auth with secure cookies
   - Role-based access control (User, Admin)
-  - OAuth providers ready (GitHub, Google) - commented out for easy enabling
+  - OAuth providers ready (GitHub, Google) — uncomment to enable
 
 - **Multi-Tenant Organizations**
   - Organization creation and management
-  - Team member invitations
+  - Team member invitations with email notifications
   - Role-based permissions (Owner, Admin, Member)
 
 - **User Management**
   - User profiles with avatar support
   - Admin dashboard for user management
-  - Ban/unban users
+  - Ban/unban users with expiration
   - Role management
 
-- **Modern Tech Stack**
-  - TypeScript throughout
-  - React 18 with Vite
-  - Express.js backend
-  - PostgreSQL with Prisma ORM
-  - Better Auth for authentication
-  - shadcn/ui components with Tailwind CSS
+- **Production-Ready Infrastructure**
+  - Multi-stage Docker builds for backend and frontend
+  - Docker Compose for both development and production
+  - PostgreSQL 16 with health checks
+  - Redis 7 with production configuration (maxmemory, eviction policy)
+  - nginx for frontend serving with gzip and caching
+  - Non-root container users
 
 - **Developer Experience**
-  - Monorepo structure with npm workspaces
-  - Docker Compose for local development
+  - TypeScript monorepo with npm workspaces
   - Hot reload for frontend and backend
-  - Shared types and validation schemas
-  - Comprehensive error handling
+  - Shared types and Zod validation schemas
+  - ESLint + Prettier configured
+  - Vitest testing infrastructure
 
 ## Tech Stack
 
-### Frontend
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **React Router** - Client-side routing
-- **TanStack Query** - Server state management
-- **Axios** - HTTP client
-- **shadcn/ui** - UI component library
-- **Tailwind CSS** - Utility-first CSS
-
-### Backend
-- **Node.js 20** - Runtime
-- **Express.js** - Web framework
-- **TypeScript** - Type safety
-- **Prisma** - ORM and database toolkit
-- **Better Auth** - Authentication library
-- **Postmark** - Email service
-
-### Database & Infrastructure
-- **PostgreSQL 16** - Primary database
-- **Redis 7** - Caching and sessions
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, React Router, TanStack Query, Zustand |
+| **Backend** | Node.js 20, Express, TypeScript, Prisma, Better Auth, Winston, Zod |
+| **Database** | PostgreSQL 16 |
+| **Cache** | Redis 7 |
+| **Email** | Postmark |
+| **Testing** | Vitest, React Testing Library, Supertest |
+| **Infrastructure** | Docker, Docker Compose, nginx |
 
 ## Quick Start
 
@@ -68,77 +55,62 @@ A production-ready, full-stack web application template built with modern techno
 
 - Node.js 20+
 - Docker and Docker Compose
-- npm or yarn
+- npm 10+
 
-### Installation
+### Development Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd webapp_template
-   ```
+```bash
+# 1. Clone and install
+git clone <your-repo-url>
+cd webapp_template
+npm install
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# 2. Set up environment variables
+cp .env.example .env
+cp apps/backend/.env.example apps/backend/.env
+cp apps/frontend/.env.example apps/frontend/.env
 
-3. **Set up environment variables**
+# 3. Start infrastructure (PostgreSQL, Redis, pgAdmin)
+npm run docker:up
 
-   Copy the example environment files and update them with your values:
+# 4. Run database migrations and seed
+npm run db:generate
+npm run db:migrate
+npm run db:seed
 
-   ```bash
-   # Root environment
-   cp .env.example .env
+# 5. Start development servers
+npm run dev
+```
 
-   # Backend environment
-   cp apps/backend/.env.example apps/backend/.env
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3001
+- pgAdmin: http://localhost:5050
 
-   # Frontend environment
-   cp apps/frontend/.env.example apps/frontend/.env
-   ```
+### Production Deployment (Docker)
 
-4. **Start Docker services**
-   ```bash
-   npm run docker:up
-   ```
+```bash
+# Build and start all services
+npm run docker:build
+npm run docker:prod
 
-   This starts PostgreSQL, Redis, and pgAdmin.
+# Or with custom environment
+BETTER_AUTH_SECRET=$(openssl rand -base64 32) \
+POSTGRES_PASSWORD=secure-password \
+npm run docker:prod
+```
 
-5. **Run database migrations**
-   ```bash
-   npm run db:migrate
-   ```
-
-6. **Seed the database with test data**
-   ```bash
-   npm run db:seed
-   ```
-
-7. **Start the development servers**
-   ```bash
-   npm run dev
-   ```
-
-   This starts both frontend (http://localhost:5173) and backend (http://localhost:3001).
+- Application: http://localhost (frontend + API proxy)
+- Backend API: http://localhost:3001
 
 ## Test Credentials
 
-After seeding the database, you can log in with these test accounts:
+After seeding the database:
 
-### Admin Account
-- **Email:** admin@example.com
-- **Password:** Admin123!
-- **Role:** Admin (full system access)
-
-### Regular Users
-- **Email:** user1@example.com
-- **Password:** User123!
-- **Role:** User
-
-- **Email:** user2@example.com
-- **Password:** User123!
-- **Role:** User
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@example.com | Admin123! |
+| User | user1@example.com | User123! |
+| User | user2@example.com | User123! |
 
 ## Project Structure
 
@@ -147,204 +119,191 @@ webapp_template/
 ├── apps/
 │   ├── backend/               # Express.js API server
 │   │   ├── src/
-│   │   │   ├── config/       # Configuration files (auth, email, db)
-│   │   │   ├── controllers/  # Route controllers
-│   │   │   ├── middleware/   # Express middleware
-│   │   │   ├── routes/       # API routes
-│   │   │   ├── prisma/       # Database schema and migrations
-│   │   │   └── index.ts      # Server entry point
-│   │   ├── .env.example
-│   │   └── package.json
+│   │   │   ├── config/        # Auth, database, email config
+│   │   │   ├── controllers/   # Route controllers
+│   │   │   ├── middleware/     # Auth, error, validation middleware
+│   │   │   ├── routes/        # API route definitions
+│   │   │   ├── prisma/        # Schema, migrations, seed
+│   │   │   └── utils/         # Logger, error classes
+│   │   └── Dockerfile         # Multi-stage production build
 │   │
-│   └── frontend/              # React application
+│   └── frontend/              # React SPA
 │       ├── src/
-│       │   ├── components/   # Reusable components
-│       │   │   ├── ui/       # shadcn/ui components
-│       │   │   ├── auth/     # Auth-related components
-│       │   │   └── layout/   # Layout components
-│       │   ├── hooks/        # Custom React hooks
-│       │   ├── lib/          # Utilities and API client
-│       │   ├── pages/        # Page components
-│       │   │   ├── auth/     # Authentication pages
-│       │   │   ├── dashboard/# Dashboard pages
-│       │   │   ├── organization/ # Organization pages
-│       │   │   └── admin/    # Admin pages
-│       │   ├── styles/       # Global styles
-│       │   ├── App.tsx       # Root component with routes
-│       │   └── main.tsx      # Entry point
-│       ├── .env.example
-│       └── package.json
+│       │   ├── components/    # UI, auth, layout components
+│       │   ├── pages/         # Auth, dashboard, admin, org pages
+│       │   ├── hooks/         # useAuth and custom hooks
+│       │   ├── lib/           # API client, utilities
+│       │   └── styles/        # Global CSS and theming
+│       └── Dockerfile         # Multi-stage build with nginx
 │
 ├── packages/
-│   └── shared/               # Shared code between frontend and backend
-│       ├── src/
-│       │   ├── types/        # TypeScript type definitions
-│       │   └── validation/   # Zod validation schemas
-│       └── package.json
+│   └── shared/                # Shared types and Zod validation
 │
 ├── docker/
-│   └── docker-compose.yml    # Docker services configuration
+│   ├── docker-compose.yml     # Full-stack production compose
+│   ├── docker-compose.dev.yml # Dev overrides (infra only)
+│   ├── nginx/default.conf     # Frontend nginx config
+│   ├── redis/redis.conf       # Redis production config
+│   └── postgres/init.sql      # DB initialization
 │
-├── package.json              # Root package.json with workspaces
-└── README.md
+└── package.json               # Monorepo workspace config
 ```
 
 ## Available Scripts
 
-### Root Level
+### Development
 
-- `npm run dev` - Start both frontend and backend in development mode
-- `npm run dev:backend` - Start only the backend server
-- `npm run dev:frontend` - Start only the frontend dev server
-- `npm run build` - Build both frontend and backend for production
-- `npm run docker:up` - Start Docker services (PostgreSQL, Redis, pgAdmin)
-- `npm run docker:down` - Stop Docker services
-- `npm run db:migrate` - Run Prisma database migrations
-- `npm run db:seed` - Seed database with test data
-- `npm run db:studio` - Open Prisma Studio (database GUI)
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start both frontend and backend with hot reload |
+| `npm run dev:backend` | Start only the backend server |
+| `npm run dev:frontend` | Start only the frontend dev server |
+| `npm run docker:up` | Start infrastructure (PostgreSQL, Redis, pgAdmin) |
+| `npm run docker:down` | Stop infrastructure |
+| `npm run docker:logs` | Follow infrastructure logs |
 
-### Backend
+### Database
 
-- `npm run dev` - Start backend with hot reload
-- `npm run build` - Build backend for production
-- `npm run start` - Start production build
-- `npm run prisma:generate` - Generate Prisma client
-- `npm run prisma:migrate` - Run migrations
-- `npm run prisma:studio` - Open Prisma Studio
-- `npm run prisma:seed` - Seed database
+| Command | Description |
+|---------|-------------|
+| `npm run db:generate` | Generate Prisma client |
+| `npm run db:migrate` | Run database migrations |
+| `npm run db:seed` | Seed database with test data |
+| `npm run db:studio` | Open Prisma Studio (database GUI) |
 
-### Frontend
+### Build & Production
 
-- `npm run dev` - Start Vite dev server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
+| Command | Description |
+|---------|-------------|
+| `npm run build` | Build all workspaces |
+| `npm run docker:build` | Build Docker images |
+| `npm run docker:prod` | Start full-stack production (Docker) |
+| `npm run docker:prod:down` | Stop production services |
+| `npm run docker:prod:logs` | Follow production logs |
 
-## Environment Variables
+### Testing & Quality
 
-### Backend (.env)
-
-```bash
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
-
-# Redis
-REDIS_URL="redis://localhost:6379"
-
-# Server
-PORT=3001
-NODE_ENV=development
-
-# Better Auth
-BETTER_AUTH_SECRET="your-secret-key-min-32-chars"
-BETTER_AUTH_URL="http://localhost:3001"
-
-# Email (Postmark)
-POSTMARK_API_KEY="your-postmark-api-key"
-FROM_EMAIL="noreply@yourdomain.com"
-FROM_NAME="Your App Name"
-
-# Frontend URL (for CORS and email links)
-FRONTEND_URL="http://localhost:5173"
-
-# OAuth (optional - uncomment to enable)
-# GITHUB_CLIENT_ID="your-github-client-id"
-# GITHUB_CLIENT_SECRET="your-github-client-secret"
-# GOOGLE_CLIENT_ID="your-google-client-id"
-# GOOGLE_CLIENT_SECRET="your-google-client-secret"
-```
-
-### Frontend (.env)
-
-```bash
-# API URL
-VITE_API_URL="http://localhost:3001"
-
-# Feature Flags
-VITE_ENABLE_ORGANIZATIONS=true
-```
-
-## Docker Services
-
-The template includes Docker Compose configuration for local development:
-
-### PostgreSQL
-- **Port:** 5432
-- **Database:** webapp_db
-- **User:** webapp_user
-- **Password:** Set in docker/.env
-
-### Redis
-- **Port:** 6379
-- Used for session storage and caching
-
-### pgAdmin
-- **Port:** 5050
-- **URL:** http://localhost:5050
-- Web-based PostgreSQL admin interface
+| Command | Description |
+|---------|-------------|
+| `npm run test` | Run all tests |
+| `npm run lint` | Lint all workspaces |
+| `npm run format` | Format code with Prettier |
 
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/sign-up/email` - Register with email/password
-- `POST /api/auth/sign-in/email` - Sign in with email/password
-- `POST /api/auth/sign-out` - Sign out
-- `POST /api/auth/forgot-password` - Request password reset
-- `GET /api/auth/verify-email` - Verify email address
-- `GET /api/auth/session` - Get current session
+### Authentication (Better Auth)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/sign-up/email` | Register with email/password |
+| POST | `/api/auth/sign-in/email` | Sign in |
+| POST | `/api/auth/sign-out` | Sign out |
+| POST | `/api/auth/forgot-password` | Request password reset |
+| POST | `/api/auth/reset-password` | Reset password with token |
+| GET | `/api/auth/verify-email` | Verify email address |
+| GET | `/api/auth/session` | Get current session |
 
 ### Users
-- `GET /api/users/me` - Get current user profile
-- `PATCH /api/users/me` - Update current user profile
-- `GET /api/users` - List all users (admin only)
-- `POST /api/users/:id/ban` - Ban user (admin only)
-- `POST /api/users/:id/unban` - Unban user (admin only)
-- `PATCH /api/users/:id/role` - Update user role (admin only)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/users/me` | Get current user profile |
+| PATCH | `/api/users/me` | Update current user profile |
+| GET | `/api/users` | List all users (admin) |
+| POST | `/api/users/:id/ban` | Ban user (admin) |
+| POST | `/api/users/:id/unban` | Unban user (admin) |
+| PATCH | `/api/users/:id/role` | Update user role (admin) |
 
 ### Organizations
-- `GET /api/organizations` - List user's organizations
-- `POST /api/organizations` - Create organization
-- `GET /api/organizations/:id` - Get organization details
-- `PATCH /api/organizations/:id` - Update organization
-- `DELETE /api/organizations/:id` - Delete organization
-- `POST /api/organizations/:id/members` - Invite member
-- `DELETE /api/organizations/:id/members/:memberId` - Remove member
-- `PATCH /api/organizations/:id/members/:memberId` - Update member role
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/organizations` | List user's organizations |
+| POST | `/api/organizations` | Create organization |
+| GET | `/api/organizations/:id` | Get organization details |
+| PATCH | `/api/organizations/:id` | Update organization |
+| DELETE | `/api/organizations/:id` | Delete organization |
+| POST | `/api/organizations/:id/members` | Invite member |
+| DELETE | `/api/organizations/:id/members/:memberId` | Remove member |
+| PATCH | `/api/organizations/:id/members/:memberId` | Update member role |
 
 ## Authentication Flow
 
-1. **Sign Up:**
-   - User registers with email/password
-   - Verification email sent
-   - User clicks verification link
-   - Account activated
+1. **Sign Up** — User registers with email/password. Verification email sent automatically. User clicks link to verify.
+2. **Sign In** — User enters credentials. Session created with secure HTTP-only cookie.
+3. **Password Reset** — User requests reset email via `/forgot-password`. Clicks link to `/reset-password?token=xxx`. Submits new password.
+4. **Email Verification** — User clicks verification link from email. Redirected to `/verify-email?token=xxx` for automatic verification.
+5. **Protected Routes** — Frontend checks auth status. Unauthenticated users redirected to login. Admin routes check for admin role.
 
-2. **Sign In:**
-   - User enters email/password
-   - Session created with secure cookie
-   - Redirected to dashboard
+## Docker Architecture
 
-3. **Protected Routes:**
-   - Frontend checks authentication status
-   - Redirects to login if not authenticated
-   - Admin routes check for admin role
+### Production (`docker compose -f docker/docker-compose.yml up`)
 
-## Database Schema
+All services run in containers:
 
-### Core Tables
+```
+┌─────────────────────────────────────────────────┐
+│  webapp_network                                  │
+│                                                  │
+│  ┌──────────┐    ┌─────────┐    ┌────────────┐  │
+│  │ frontend │───>│ backend │───>│ postgresql │  │
+│  │ (nginx)  │    │ (node)  │    │            │  │
+│  │ :80      │    │ :3001   │    │ :5432      │  │
+│  └──────────┘    └────┬────┘    └────────────┘  │
+│                       │                          │
+│                       v                          │
+│                  ┌─────────┐                     │
+│                  │  redis  │                     │
+│                  │  :6379  │                     │
+│                  └─────────┘                     │
+└─────────────────────────────────────────────────┘
+```
 
-- **user** - User accounts and authentication
-- **session** - User sessions
-- **account** - OAuth accounts (if enabled)
-- **verification** - Email verification tokens
-- **organization** - Organizations/teams
-- **organizationMember** - Organization memberships
-- **organizationInvitation** - Pending invitations
+- **Frontend**: nginx serves React SPA, proxies `/api/` to backend
+- **Backend**: Node.js Express API, connects to PostgreSQL and Redis
+- **PostgreSQL**: Primary database with health checks
+- **Redis**: Session storage and caching with production config
 
-### Example Domain Tables
+### Development (`npm run docker:up`)
 
-- **project** - Example projects
-- **task** - Example tasks
+Only infrastructure runs in Docker. Backend and frontend run locally with hot reload for fast development.
+
+### pgAdmin
+
+pgAdmin is available as an optional tool. In development it starts by default. In production, start it explicitly:
+
+```bash
+docker compose -f docker/docker-compose.yml --profile tools up pgadmin -d
+```
+
+## Environment Variables
+
+### Backend (`apps/backend/.env`)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3001` | Server port |
+| `DATABASE_URL` | — | PostgreSQL connection string |
+| `REDIS_URL` | — | Redis connection string |
+| `BETTER_AUTH_SECRET` | — | Auth secret (min 32 chars) |
+| `BETTER_AUTH_URL` | `http://localhost:3001` | Auth server URL |
+| `FRONTEND_URL` | `http://localhost:5173` | Frontend URL (for CORS, emails) |
+| `POSTMARK_API_KEY` | — | Postmark API key |
+| `EMAIL_TEST_MODE` | `true` | Log emails instead of sending |
+| `CORS_ORIGIN` | `http://localhost:5173` | Allowed CORS origins |
+| `SESSION_COOKIE_SECURE` | `false` | Secure cookies (set `true` for HTTPS) |
+| `SESSION_EXPIRY_DAYS` | `7` | Session duration |
+| `LOG_LEVEL` | `info` | Winston log level |
+
+### Frontend (`apps/frontend/.env`)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VITE_API_URL` | `http://localhost:3001` | Backend API URL |
+| `VITE_APP_NAME` | `Your App Name` | Application name |
+| `VITE_ENABLE_ORGANIZATIONS` | `true` | Enable org features |
+
+See `.env.example` files for all available variables.
 
 ## Customization
 
@@ -357,151 +316,35 @@ The template includes Docker Compose configuration for local development:
 ### Adding New API Endpoints
 
 1. Create controller in `apps/backend/src/controllers/`
-2. Create route in `apps/backend/src/routes/`
+2. Create route file in `apps/backend/src/routes/`
 3. Register route in `apps/backend/src/index.ts`
 
-### Adding New UI Components
+### Enabling OAuth Providers
+
+1. Uncomment the `socialProviders` section in `apps/backend/src/config/auth.config.ts`
+2. Add OAuth credentials to `apps/backend/.env`
+3. Run migrations if schema changes are needed
+
+### Adding UI Components
 
 ```bash
 # Add shadcn/ui components
 npx shadcn-ui@latest add [component-name]
 ```
 
-### Enabling OAuth Providers
+## Security
 
-1. Uncomment OAuth configuration in `apps/backend/src/config/auth.config.ts`
-2. Add OAuth credentials to `apps/backend/.env`
-3. Update Prisma schema if needed
-4. Run migrations: `npm run db:migrate`
-
-## Security Best Practices
-
-- All passwords hashed with bcrypt
-- Secure HTTP-only cookies for sessions
-- CSRF protection enabled
-- Rate limiting on auth endpoints
+- Passwords hashed with bcrypt
+- Secure HTTP-only session cookies
+- CSRF protection via Better Auth
+- Rate limiting on API and auth endpoints
 - Input validation with Zod schemas
-- SQL injection protection via Prisma
-- XSS protection with helmet
+- SQL injection prevention via Prisma
+- XSS protection with helmet security headers
 - CORS properly configured
-
-## Email Configuration
-
-The template uses Postmark for transactional emails:
-
-1. Sign up at https://postmarkapp.com
-2. Get your Server API Token
-3. Add to `apps/backend/.env`:
-   ```bash
-   POSTMARK_API_KEY="your-token"
-   FROM_EMAIL="noreply@yourdomain.com"
-   FROM_NAME="Your App Name"
-   ```
-
-Emails sent:
-- Email verification
-- Password reset
-- Organization invitations
-
-## Deployment
-
-### Backend
-
-1. Build the application:
-   ```bash
-   cd apps/backend
-   npm run build
-   ```
-
-2. Set production environment variables
-
-3. Run migrations:
-   ```bash
-   npm run prisma:migrate deploy
-   ```
-
-4. Start the server:
-   ```bash
-   npm start
-   ```
-
-### Frontend
-
-1. Build the application:
-   ```bash
-   cd apps/frontend
-   npm run build
-   ```
-
-2. Serve the `dist` folder with any static hosting service (Vercel, Netlify, etc.)
-
-### Database
-
-- Use managed PostgreSQL (AWS RDS, DigitalOcean, etc.)
-- Update `DATABASE_URL` in production environment
-
-### Recommended Platforms
-
-- **Frontend:** Vercel, Netlify, Cloudflare Pages
-- **Backend:** Railway, Render, Fly.io, AWS
-- **Database:** Supabase, Railway, Render
-
-## Troubleshooting
-
-### Port Already in Use
-
-If you see "Port 3001 already in use":
-```bash
-# Find and kill the process
-lsof -ti:3001 | xargs kill -9
-```
-
-### Database Connection Issues
-
-1. Ensure Docker services are running:
-   ```bash
-   npm run docker:up
-   ```
-
-2. Check connection string in `apps/backend/.env`
-
-3. Verify PostgreSQL is accepting connections:
-   ```bash
-   docker ps
-   ```
-
-### Email Not Sending
-
-1. Verify Postmark API key is correct
-2. Check `FROM_EMAIL` is verified in Postmark
-3. Review backend logs for email errors
-
-### Build Errors
-
-1. Clear node_modules and reinstall:
-   ```bash
-   rm -rf node_modules apps/*/node_modules packages/*/node_modules
-   npm install
-   ```
-
-2. Clear build caches:
-   ```bash
-   npm run clean
-   npm run build
-   ```
-
-## Contributing
-
-This is a template repository. Fork it and customize it for your needs!
+- Redis commands (FLUSHDB, FLUSHALL, DEBUG) disabled in production
+- Docker containers run as non-root users
 
 ## License
 
 MIT
-
-## Support
-
-For issues and questions, please open an issue on the repository.
-
----
-
-**Built with ❤️ using modern web technologies**
