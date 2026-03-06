@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { authClient } from '@/lib/auth-client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { api } from '@/lib/api';
 import {
   Building2,
   Users,
@@ -20,44 +21,30 @@ import {
   Trash2,
 } from 'lucide-react';
 
-interface OrganizationMember {
-  id: string;
-  userId: string;
-  role: string;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-  };
-}
-
-interface Organization {
-  id: string;
-  name: string;
-  slug: string;
-  logo: string | null;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-  members: OrganizationMember[];
-}
-
 export default function OrganizationDetailsPage() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: organization, isLoading, error } = useQuery({
     queryKey: ['organization', id],
     queryFn: async () => {
-      const response = await api.get(`/api/organizations/${id}`);
-      return response.data.data as Organization;
+      const { data, error } = await authClient.organization.getFull({
+        query: { orgId: id! },
+      });
+      if (error) throw new Error(error.message);
+      return data;
     },
     enabled: !!id,
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: async (memberId: string) => {
-      await api.delete(`/api/organizations/${id}/members/${memberId}`);
+    mutationFn: async (memberIdOrEmail: string) => {
+      const { error } = await authClient.organization.removeMember({
+        memberIdOrEmail,
+        organizationId: id!,
+      });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', id] });
@@ -109,7 +96,8 @@ export default function OrganizationDetailsPage() {
     );
   }
 
-  const currentUserMember = organization.members.find((m) => m.userId === organization.id);
+  const members = organization.members || [];
+  const currentUserMember = members.find((m: any) => m.userId === user?.id);
   const isOwnerOrAdmin = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
 
   return (
@@ -173,18 +161,18 @@ export default function OrganizationDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {organization.members.map((member) => (
+                  {members.map((member: any) => (
                     <div
                       key={member.id}
                       className="flex items-center justify-between rounded-lg border p-4"
                     >
                       <div className="flex items-center gap-4">
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                          {member.user.name?.charAt(0).toUpperCase() || 'U'}
+                          {member.user?.name?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium">{member.user.name || 'Unknown User'}</p>
+                            <p className="font-medium">{member.user?.name || 'Unknown User'}</p>
                             <Badge variant={getRoleBadgeVariant(member.role)}>
                               {getRoleIcon(member.role)}
                               <span className="ml-1">{member.role}</span>
@@ -192,7 +180,7 @@ export default function OrganizationDetailsPage() {
                           </div>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Mail className="h-3 w-3" />
-                            {member.user.email}
+                            {member.user?.email}
                           </div>
                         </div>
                       </div>
@@ -244,18 +232,18 @@ export default function OrganizationDetailsPage() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Total Members</span>
-                    <span className="text-2xl font-bold">{organization.members.length}</span>
+                    <span className="text-2xl font-bold">{members.length}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Admins</span>
                     <span className="text-2xl font-bold">
-                      {organization.members.filter((m) => m.role === 'admin').length}
+                      {members.filter((m: any) => m.role === 'admin').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Owners</span>
                     <span className="text-2xl font-bold">
-                      {organization.members.filter((m) => m.role === 'owner').length}
+                      {members.filter((m: any) => m.role === 'owner').length}
                     </span>
                   </div>
                 </CardContent>

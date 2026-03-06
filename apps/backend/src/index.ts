@@ -13,7 +13,6 @@ import { auth } from './config/auth.config.js';
 import { logger, requestLogger } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import userRoutes from './routes/user.routes.js';
-import organizationRoutes from './routes/organization.routes.js';
 import projectRoutes from './routes/project.routes.js';
 
 // Load environment variables
@@ -63,6 +62,13 @@ const apiLimiter = rateLimit({
 app.use('/api/', apiLimiter);
 
 // =============================================================================
+// Better Auth Routes (MUST be before body parsing middleware)
+// =============================================================================
+
+// Mount Better Auth handler for authentication endpoints
+app.all('/api/auth/*', toNodeHandler(auth));
+
+// =============================================================================
 // Body Parsing Middleware
 // =============================================================================
 
@@ -79,7 +85,7 @@ app.use(requestLogger);
 // Health Check Endpoint
 // =============================================================================
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
@@ -88,7 +94,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({
     name: 'Webapp Template API',
     version: '1.0.0',
@@ -98,18 +104,10 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // =============================================================================
-// Better Auth Routes
-// =============================================================================
-
-// Mount Better Auth handler for authentication endpoints
-app.all('/api/auth/*', toNodeHandler(auth));
-
-// =============================================================================
 // API Routes
 // =============================================================================
 
 app.use('/api/users', userRoutes);
-app.use('/api/organizations', organizationRoutes);
 app.use('/api/projects', projectRoutes);
 
 // =============================================================================
@@ -136,7 +134,7 @@ app.listen(PORT, () => {
 });
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (reason: Error, promise: Promise<any>) => {
+process.on('unhandledRejection', (reason: Error, _promise: Promise<any>) => {
   logger.error('Unhandled Promise Rejection:', {
     reason: reason.message,
     stack: reason.stack,

@@ -5,7 +5,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
-import { Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { AppError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
 import { ApiResponse, HttpStatus, ErrorCode } from '@webapp/shared';
@@ -17,7 +17,7 @@ export function errorHandler(
   err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   // Log the error
   logger.error('Error caught by error handler:', {
@@ -34,7 +34,7 @@ export function errorHandler(
     handleAppError(err, res);
   } else if (err instanceof ZodError) {
     handleZodError(err, res);
-  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+  } else if (err instanceof PrismaClientKnownRequestError) {
     handlePrismaError(err, res);
   } else {
     handleUnknownError(err, res);
@@ -86,7 +86,7 @@ function handleZodError(err: ZodError, res: Response): void {
  * Handle Prisma database errors
  */
 function handlePrismaError(
-  err: Prisma.PrismaClientKnownRequestError,
+  err: PrismaClientKnownRequestError,
   res: Response
 ): void {
   let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -172,7 +172,7 @@ function handleUnknownError(err: Error, res: Response): void {
 export function notFoundHandler(
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   const response: ApiResponse = {
     success: false,

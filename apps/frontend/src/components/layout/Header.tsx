@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { api } from '@/lib/api';
+import { authClient } from '@/lib/auth-client';
+import { userAPI } from '@/lib/api';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,18 +19,22 @@ export function Header() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await api.post('/api/auth/sign-out');
+  const { data: pendingCountData } = useQuery({
+    queryKey: ['admin', 'users', 'pending', 'count'],
+    queryFn: async () => {
+      const response = await userAPI.getPendingCount();
+      return response.data.data as { count: number };
     },
-    onSuccess: () => {
-      navigate('/login');
-      window.location.reload();
-    },
+    enabled: user?.role === 'admin',
+    refetchInterval: 60000,
   });
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const pendingCount = pendingCountData?.count || 0;
+
+  const handleLogout = async () => {
+    await authClient.signOut();
+    navigate('/login');
+    window.location.reload();
   };
 
   const getInitials = (name: string | null | undefined): string => {
@@ -72,9 +77,14 @@ export function Header() {
             {user?.role === 'admin' && (
               <Link
                 to="/admin/users"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="relative text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 Admin
+                {pendingCount > 0 && (
+                  <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-medium text-white">
+                    {pendingCount}
+                  </span>
+                )}
               </Link>
             )}
           </nav>
@@ -115,7 +125,7 @@ export function Header() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

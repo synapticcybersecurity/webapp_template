@@ -1,6 +1,6 @@
 /**
  * API Client Configuration
- * Axios instance with interceptors for auth and error handling
+ * Axios instance for custom API endpoints not handled by better-auth
  */
 
 import axios from 'axios';
@@ -21,7 +21,6 @@ export const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Add any custom headers here if needed
     return config;
   },
   (error) => {
@@ -33,7 +32,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle 401 (redirect to login)
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
       if (currentPath !== '/login' && currentPath !== '/signup') {
@@ -45,38 +43,14 @@ api.interceptors.response.use(
   }
 );
 
-// API service functions
+// Custom API endpoints not covered by better-auth
 export const userAPI = {
-  getCurrentUser: () => api.get('/api/users/me'),
-  updateCurrentUser: (data: any) => api.patch('/api/users/me', data),
-  listUsers: (params?: any) => api.get('/api/users', { params }),
-  getUserById: (id: string) => api.get(`/api/users/${id}`),
-  updateUserRole: (id: string, role: string) =>
-    api.patch(`/api/users/${id}/role`, { role }),
-  banUser: (id: string, data: any) => api.post(`/api/users/${id}/ban`, data),
-  unbanUser: (id: string) => api.post(`/api/users/${id}/unban`),
-};
-
-export const organizationAPI = {
-  listOrganizations: () => api.get('/api/organizations'),
-  getOrganization: (id: string) => api.get(`/api/organizations/${id}`),
-  createOrganization: (data: any) => api.post('/api/organizations', data),
-  updateOrganization: (id: string, data: any) =>
-    api.patch(`/api/organizations/${id}`, data),
-  deleteOrganization: (id: string) => api.delete(`/api/organizations/${id}`),
-  listMembers: (orgId: string) => api.get(`/api/organizations/${orgId}/members`),
-  inviteMember: (orgId: string, data: any) =>
-    api.post(`/api/organizations/${orgId}/members`, data),
-  updateMemberRole: (orgId: string, memberId: string, role: string) =>
-    api.patch(`/api/organizations/${orgId}/members/${memberId}`, { role }),
-  removeMember: (orgId: string, memberId: string) =>
-    api.delete(`/api/organizations/${orgId}/members/${memberId}`),
-  listInvitations: (orgId: string) =>
-    api.get(`/api/organizations/${orgId}/invitations`),
-  acceptInvitation: (token: string) =>
-    api.post(`/api/organizations/invitations/${token}/accept`),
-  cancelInvitation: (invitationId: string) =>
-    api.delete(`/api/organizations/invitations/${invitationId}`),
+  // Admin approval workflow (custom business logic)
+  listPendingApprovals: () => api.get('/api/users/pending'),
+  getPendingCount: () => api.get('/api/users/pending/count'),
+  approveUser: (id: string) => api.post(`/api/users/${id}/approve`),
+  rejectUser: (id: string, reason?: string) =>
+    api.post(`/api/users/${id}/reject`, { reason }),
 };
 
 export const projectAPI = {

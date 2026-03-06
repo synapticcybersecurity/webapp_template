@@ -1,46 +1,17 @@
 /**
  * Authentication Hook
- * Provides auth state and operations throughout the app
+ * Provides auth state and operations throughout the app using better-auth client
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userAPI } from '@/lib/api';
-import type { User } from '@webapp/shared';
+import { authClient } from '@/lib/auth-client';
 
 export function useAuth() {
-  // Get current user
-  const {
-    data: user,
-    isLoading,
-    error,
-  } = useQuery<User>({
-    queryKey: ['user', 'me'],
-    queryFn: async () => {
-      const response = await userAPI.getCurrentUser();
-      return response.data.data;
-    },
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const isAuthenticated = !!user && !error;
+  const { data: session, isPending, error } = authClient.useSession();
 
   return {
-    user: user || null,
-    isLoading,
-    isAuthenticated,
+    user: session?.user ?? null,
+    isLoading: isPending,
+    isAuthenticated: !!session?.user,
     error,
   };
-}
-
-export function useUpdateProfile() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: { name?: string; image?: string }) =>
-      userAPI.updateCurrentUser(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
-    },
-  });
 }

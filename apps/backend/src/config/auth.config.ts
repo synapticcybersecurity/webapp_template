@@ -12,6 +12,7 @@ import {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendOrganizationInvitationEmail,
+  sendPendingApprovalEmail,
 } from './email.js';
 import { logger } from '../utils/logger.js';
 
@@ -47,7 +48,8 @@ export const auth = betterAuth({
     requireEmailVerification: true,
 
     // Send password reset email
-    sendResetPassword: async ({ user, url }) => {
+    sendResetPassword: async (data: any) => {
+      const { user, url } = data;
       logger.info(`Sending password reset email to ${user.email}`);
       await sendPasswordResetEmail(user.email, url);
     },
@@ -56,7 +58,8 @@ export const auth = betterAuth({
   // Email verification
   emailVerification: {
     sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url, token }) => {
+    sendVerificationEmail: async (data: any) => {
+      const { user, url, token } = data;
       logger.info(`Sending verification email to ${user.email}`);
       await sendVerificationEmail(user.email, url, token);
     },
@@ -95,6 +98,43 @@ export const auth = betterAuth({
     max: 10, // 10 requests per window
   },
 
+  // Database hooks for admin approval workflow
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          // Auto-ban new users pending admin approval
+          return {
+            data: {
+              ...user,
+              banned: true,
+              banReason: 'pending_approval',
+            },
+          };
+        },
+        after: async (user) => {
+          // Notify all admin users of the new registration
+          try {
+            const admins = await prisma.user.findMany({
+              where: { role: 'admin' },
+              select: { email: true },
+            });
+
+            for (const admin of admins) {
+              await sendPendingApprovalEmail(
+                admin.email,
+                user.name || 'Unknown',
+                user.email
+              );
+            }
+          } catch (error) {
+            logger.error('Failed to send pending approval notification emails:', error);
+          }
+        },
+      },
+    },
+  },
+
   // Plugins
   plugins: [
     // Admin plugin for user management
@@ -111,10 +151,11 @@ export const auth = betterAuth({
 
         const invitationUrl = `${FRONTEND_URL}/organizations/invitations/${data.id}`;
 
+        const inviter = data.inviter as { name?: string; email?: string } | undefined;
         await sendOrganizationInvitationEmail(
           data.email,
           data.organization.name,
-          data.inviter?.name || data.inviter?.email || 'Someone',
+          inviter?.name || inviter?.email || 'Someone',
           data.role,
           invitationUrl
         );

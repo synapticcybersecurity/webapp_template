@@ -23,7 +23,7 @@ const postmarkClient = EMAIL_TEST_MODE
 export async function sendVerificationEmail(
   email: string,
   verificationUrl: string,
-  token: string
+  _token: string
 ): Promise<void> {
   const subject = 'Verify your email address';
   const htmlBody = `
@@ -186,6 +186,161 @@ If you don't want to accept this invitation, you can safely ignore this email.
 }
 
 /**
+ * Send email to admin notifying them of a new registration pending approval
+ */
+export async function sendPendingApprovalEmail(
+  adminEmail: string,
+  userName: string,
+  userEmail: string
+): Promise<void> {
+  const subject = `New registration pending approval: ${userEmail}`;
+  const adminUrl = `${FRONTEND_URL}/admin/users?tab=pending`;
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>New Registration Pending Approval</h1>
+          <p>A new user has registered and is waiting for admin approval:</p>
+          <ul>
+            <li><strong>Name:</strong> ${userName}</li>
+            <li><strong>Email:</strong> ${userEmail}</li>
+          </ul>
+          <p style="margin: 30px 0;">
+            <a href="${adminUrl}" class="button">Review Pending Approvals</a>
+          </p>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const textBody = `
+New Registration Pending Approval
+
+A new user has registered and is waiting for admin approval:
+
+Name: ${userName}
+Email: ${userEmail}
+
+Review pending approvals: ${adminUrl}
+
+© ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.
+  `.trim();
+
+  await sendEmail(adminEmail, subject, htmlBody, textBody);
+}
+
+/**
+ * Send email to user notifying them their account has been approved
+ */
+export async function sendAccountApprovedEmail(
+  email: string,
+  loginUrl: string
+): Promise<void> {
+  const subject = 'Your account has been approved';
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .button { display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Account Approved!</h1>
+          <p>Great news! Your account has been reviewed and approved by an administrator. You can now sign in and start using ${FROM_NAME}.</p>
+          <p style="margin: 30px 0;">
+            <a href="${loginUrl}" class="button">Sign In</a>
+          </p>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const textBody = `
+Account Approved!
+
+Great news! Your account has been reviewed and approved by an administrator. You can now sign in and start using ${FROM_NAME}.
+
+Sign in: ${loginUrl}
+
+© ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.
+  `.trim();
+
+  await sendEmail(email, subject, htmlBody, textBody);
+}
+
+/**
+ * Send email to user notifying them their registration was rejected
+ */
+export async function sendAccountRejectedEmail(
+  email: string,
+  reason?: string
+): Promise<void> {
+  const subject = 'Your registration was not approved';
+  const reasonText = reason
+    ? `<p><strong>Reason:</strong> ${reason}</p>`
+    : '';
+  const reasonPlain = reason
+    ? `\nReason: ${reason}\n`
+    : '';
+
+  const htmlBody = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>Registration Not Approved</h1>
+          <p>We're sorry, but your registration was not approved by an administrator.</p>
+          ${reasonText}
+          <p>If you believe this was a mistake, please contact support.</p>
+          <div class="footer">
+            <p>&copy; ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const textBody = `
+Registration Not Approved
+
+We're sorry, but your registration was not approved by an administrator.
+${reasonPlain}
+If you believe this was a mistake, please contact support.
+
+© ${new Date().getFullYear()} ${FROM_NAME}. All rights reserved.
+  `.trim();
+
+  await sendEmail(email, subject, htmlBody, textBody);
+}
+
+/**
  * Generic email sending function
  */
 async function sendEmail(
@@ -228,4 +383,7 @@ export default {
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendOrganizationInvitationEmail,
+  sendPendingApprovalEmail,
+  sendAccountApprovedEmail,
+  sendAccountRejectedEmail,
 };

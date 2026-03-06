@@ -1,32 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { api } from '@/lib/api';
 import { Building2, Users, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-
-interface Organization {
-  id: string;
-  name: string;
-  slug: string;
-  logo: string | null;
-  metadata: Record<string, unknown> | null;
-  createdAt: string;
-  _count?: {
-    members: number;
-  };
-  role?: string;
-}
 
 export default function OrganizationListPage() {
   const { data: organizations, isLoading, error } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
-      const response = await api.get('/api/organizations');
-      return response.data.data as Organization[];
+      const { data, error } = await authClient.organization.list();
+      if (error) throw new Error(error.message);
+      return data;
     },
   });
 
@@ -79,7 +67,7 @@ export default function OrganizationListPage() {
 
         {!isLoading && !error && organizations && organizations.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {organizations.map((org) => (
+            {organizations.map((org: any) => (
               <Link key={org.id} to={`/organizations/${org.id}`}>
                 <Card className="transition-shadow hover:shadow-lg">
                   <CardHeader>
@@ -107,11 +95,11 @@ export default function OrganizationListPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Users className="h-4 w-4" />
-                        <span>{org._count?.members || 0} members</span>
+                        <span>{org.members?.length || 0} members</span>
                       </div>
-                      {org.role && (
-                        <Badge variant={org.role === 'owner' ? 'default' : 'secondary'}>
-                          {org.role}
+                      {org.members?.[0]?.role && (
+                        <Badge variant={org.members[0].role === 'owner' ? 'default' : 'secondary'}>
+                          {org.members[0].role}
                         </Badge>
                       )}
                     </div>

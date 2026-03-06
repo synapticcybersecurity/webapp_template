@@ -10,22 +10,29 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copy root workspace files
+# Copy all package files (npm workspaces hoists deps to root node_modules)
 COPY package.json package-lock.json tsconfig.json ./
-
-# Copy workspace package.json files
 COPY apps/frontend/package.json apps/frontend/
+COPY apps/frontend/tsconfig.json apps/frontend/
+COPY apps/frontend/tsconfig.node.json apps/frontend/
 COPY packages/shared/package.json packages/shared/
+COPY packages/shared/tsconfig.json packages/shared/
 
 # Install all dependencies
-RUN npm ci --workspace=apps/frontend --workspace=packages/shared
+# --ignore-scripts skips husky prepare and other lifecycle scripts
+RUN npm ci --ignore-scripts
 
 # Copy shared package source and build it
-COPY packages/shared/ packages/shared/
+COPY packages/shared/src/ packages/shared/src/
 RUN npm run build --workspace=packages/shared
 
-# Copy frontend source
-COPY apps/frontend/ apps/frontend/
+# Copy frontend source and config
+COPY apps/frontend/src/ apps/frontend/src/
+COPY apps/frontend/index.html apps/frontend/
+COPY apps/frontend/vite.config.ts apps/frontend/
+COPY apps/frontend/tailwind.config.js apps/frontend/
+COPY apps/frontend/postcss.config.js apps/frontend/
+COPY apps/frontend/public/ apps/frontend/public/
 
 # Build frontend (Vite produces static files in apps/frontend/dist)
 ARG VITE_API_URL=/api

@@ -11,7 +11,7 @@ import { ValidationError } from '../utils/errors.js';
  * Validate request body
  */
 export function validateBody<T>(schema: ZodSchema<T>) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       req.body = await schema.parseAsync(req.body);
       next();
@@ -29,9 +29,9 @@ export function validateBody<T>(schema: ZodSchema<T>) {
  * Validate query parameters
  */
 export function validateQuery<T>(schema: ZodSchema<T>) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      req.query = await schema.parseAsync(req.query);
+      req.query = await schema.parseAsync(req.query) as any;
       next();
     } catch (error) {
       if (error instanceof ZodError) {
@@ -47,9 +47,9 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
  * Validate URL parameters
  */
 export function validateParams<T>(schema: ZodSchema<T>) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
-      req.params = await schema.parseAsync(req.params);
+      req.params = await schema.parseAsync(req.params) as any;
       next();
     } catch (error) {
       if (error instanceof ZodError) {

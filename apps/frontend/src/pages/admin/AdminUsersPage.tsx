@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
+import { authClient } from '@/lib/auth-client';
+import { userAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { api } from '@/lib/api';
 import {
   Users,
   Search,
@@ -25,6 +29,8 @@ import {
   AlertCircle,
   Mail,
   Calendar,
+  Clock,
+  XCircle,
 } from 'lucide-react';
 
 interface User {
@@ -41,22 +47,56 @@ interface User {
 }
 
 export default function AdminUsersPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'all';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionDialog, setActionDialog] = useState<'ban' | 'unban' | 'role' | null>(null);
+  const [actionDialog, setActionDialog] = useState<'ban' | 'unban' | 'role' | 'reject' | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
   const queryClient = useQueryClient();
 
-  const { data: users, isLoading, error } = useQuery({
+  const handleTabChange = (value: string) => {
+    setSearchParams(value === 'all' ? {} : { tab: value });
+  };
+
+  // Use better-auth admin API for user listing
+  const { data: usersResponse, isLoading, error } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
-      const response = await api.get('/api/users');
+      const { data, error } = await authClient.admin.listUsers({
+        query: { limit: 100 },
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+
+  const users = (usersResponse?.users || []) as unknown as User[];
+
+  // Pending approvals still use custom API (custom business logic)
+  const { data: pendingUsers, isLoading: pendingLoading } = useQuery({
+    queryKey: ['admin', 'users', 'pending'],
+    queryFn: async () => {
+      const response = await userAPI.listPendingApprovals();
       return response.data.data as User[];
     },
   });
 
+  const { data: pendingCountData } = useQuery({
+    queryKey: ['admin', 'users', 'pending', 'count'],
+    queryFn: async () => {
+      const response = await userAPI.getPendingCount();
+      return response.data.data as { count: number };
+    },
+  });
+
+  const pendingCount = pendingCountData?.count || 0;
+
+  // Use better-auth admin API for ban/unban/role
   const banUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await api.post(`/api/users/${userId}/ban`);
+      const { error } = await authClient.admin.banUser({ userId });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -67,7 +107,8 @@ export default function AdminUsersPage() {
 
   const unbanUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await api.post(`/api/users/${userId}/unban`);
+      const { error } = await authClient.admin.unbanUser({ userId });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -78,7 +119,8 @@ export default function AdminUsersPage() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      await api.patch(`/api/users/${userId}/role`, { role });
+      const { error } = await authClient.admin.setRole({ userId, role });
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
@@ -87,10 +129,32 @@ export default function AdminUsersPage() {
     },
   });
 
-  const filteredUsers = users?.filter((user) =>
+  // Approve/reject still use custom API
+  const approveUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      await userAPI.approveUser(userId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+
+  const rejectUserMutation = useMutation({
+    mutationFn: async ({ userId, reason }: { userId: string; reason?: string }) => {
+      await userAPI.rejectUser(userId, reason);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      setActionDialog(null);
+      setSelectedUser(null);
+      setRejectReason('');
+    },
+  });
+
+  const filteredUsers = users.filter((user: User) =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  );
 
   const handleBanUser = () => {
     if (selectedUser) {
@@ -111,6 +175,30 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleRejectUser = () => {
+    if (selectedUser) {
+      rejectUserMutation.mutate({ userId: selectedUser.id, reason: rejectReason || undefined });
+    }
+  };
+
+  function getBanBadge(user: User) {
+    if (!user.banned) return null;
+    if (user.banReason === 'pending_approval') {
+      return (
+        <Badge variant="warning">
+          <Clock className="mr-1 h-3 w-3" />
+          Pending
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="destructive">
+        <Ban className="mr-1 h-3 w-3" />
+        Banned
+      </Badge>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -121,142 +209,248 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>All Users</CardTitle>
-                <CardDescription>
-                  {users?.length || 0} registered users
-                </CardDescription>
-              </div>
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search users..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            )}
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList>
+            <TabsTrigger value="all">All Users</TabsTrigger>
+            <TabsTrigger value="pending" className="relative">
+              Pending Approval
+              {pendingCount > 0 && (
+                <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-medium text-white">
+                  {pendingCount}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {error instanceof Error ? error.message : 'Failed to load users'}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {!isLoading && !error && filteredUsers.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Users className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-center text-sm text-muted-foreground">
-                  {searchTerm ? 'No users found matching your search' : 'No users yet'}
-                </p>
-              </div>
-            )}
-
-            {!isLoading && !error && filteredUsers.length > 0 && (
-              <div className="space-y-4">
-                {filteredUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-                        {user.name?.charAt(0).toUpperCase() || 'U'}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{user.name || 'Unknown User'}</p>
-                          {user.role === 'admin' && (
-                            <Badge variant="default">
-                              <Shield className="mr-1 h-3 w-3" />
-                              Admin
-                            </Badge>
-                          )}
-                          {user.banned && (
-                            <Badge variant="destructive">
-                              <Ban className="mr-1 h-3 w-3" />
-                              Banned
-                            </Badge>
-                          )}
-                          {user.emailVerified ? (
-                            <Badge variant="success">
-                              <CheckCircle className="mr-1 h-3 w-3" />
-                              Verified
-                            </Badge>
-                          ) : (
-                            <Badge variant="warning">Unverified</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {user.email}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            Joined {new Date(user.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setActionDialog('role');
-                        }}
-                      >
-                        <Shield className="mr-2 h-4 w-4" />
-                        {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
-                      </Button>
-                      {user.banned ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setActionDialog('unban');
-                          }}
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Unban
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setActionDialog('ban');
-                          }}
-                        >
-                          <Ban className="mr-2 h-4 w-4" />
-                          Ban
-                        </Button>
-                      )}
-                    </div>
+          {/* All Users Tab */}
+          <TabsContent value="all">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>All Users</CardTitle>
+                    <CardDescription>
+                      {users.length || 0} registered users
+                    </CardDescription>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="relative w-64">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search users..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {isLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {error instanceof Error ? error.message : 'Failed to load users'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {!isLoading && !error && filteredUsers.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Users className="mb-4 h-12 w-12 text-muted-foreground" />
+                    <p className="text-center text-sm text-muted-foreground">
+                      {searchTerm ? 'No users found matching your search' : 'No users yet'}
+                    </p>
+                  </div>
+                )}
+
+                {!isLoading && !error && filteredUsers.length > 0 && (
+                  <div className="space-y-4">
+                    {filteredUsers.map((user: User) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between rounded-lg border p-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+                            {user.name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{user.name || 'Unknown User'}</p>
+                              {user.role === 'admin' && (
+                                <Badge variant="default">
+                                  <Shield className="mr-1 h-3 w-3" />
+                                  Admin
+                                </Badge>
+                              )}
+                              {getBanBadge(user)}
+                              {user.emailVerified ? (
+                                <Badge variant="success">
+                                  <CheckCircle className="mr-1 h-3 w-3" />
+                                  Verified
+                                </Badge>
+                              ) : (
+                                <Badge variant="warning">Unverified</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Joined {new Date(user.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setActionDialog('role');
+                            }}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            {user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
+                          </Button>
+                          {user.banned ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setActionDialog('unban');
+                              }}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Unban
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setActionDialog('ban');
+                              }}
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              Ban
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pending Approval Tab */}
+          <TabsContent value="pending">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Approvals</CardTitle>
+                <CardDescription>
+                  Users waiting for admin approval to access the platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pendingLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
+
+                {!pendingLoading && (!pendingUsers || pendingUsers.length === 0) && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <CheckCircle className="mb-4 h-12 w-12 text-muted-foreground" />
+                    <p className="text-center text-sm text-muted-foreground">
+                      No pending approvals
+                    </p>
+                  </div>
+                )}
+
+                {!pendingLoading && pendingUsers && pendingUsers.length > 0 && (
+                  <div className="space-y-4">
+                    {pendingUsers.map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between rounded-lg border p-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+                            {user.name?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{user.name || 'Unknown User'}</p>
+                              {user.emailVerified ? (
+                                <Badge variant="success">
+                                  <CheckCircle className="mr-1 h-3 w-3" />
+                                  Email Verified
+                                </Badge>
+                              ) : (
+                                <Badge variant="warning">Email Unverified</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                Registered {new Date(user.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => approveUserMutation.mutate(user.id)}
+                            disabled={approveUserMutation.isPending}
+                          >
+                            {approveUserMutation.isPending ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                            )}
+                            Approve
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setRejectReason('');
+                              setActionDialog('reject');
+                            }}
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Reject
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Ban User Dialog */}
@@ -323,6 +517,42 @@ export default function AdminUsersPage() {
             <Button onClick={handleToggleRole} disabled={updateRoleMutation.isPending}>
               {updateRoleMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Change Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject User Dialog */}
+      <Dialog open={actionDialog === 'reject'} onOpenChange={() => setActionDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Registration</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reject {selectedUser?.email}'s registration? They will be
+              notified by email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-4">
+            <Label htmlFor="reject-reason">Reason (optional)</Label>
+            <textarea
+              id="reject-reason"
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              placeholder="Provide a reason for rejection..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setActionDialog(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectUser}
+              disabled={rejectUserMutation.isPending}
+            >
+              {rejectUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reject Registration
             </Button>
           </DialogFooter>
         </DialogContent>

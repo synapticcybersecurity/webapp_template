@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
-import { requireRole } from '../../middleware/auth.middleware.js';
+import { requireAdmin } from '../../middleware/auth.middleware.js';
 import { ForbiddenError } from '../../utils/errors.js';
 
 describe('Auth Middleware', () => {
@@ -20,52 +20,21 @@ describe('Auth Middleware', () => {
     nextFunction = vi.fn();
   });
 
-  describe('requireRole', () => {
-    it('should allow user with correct role', () => {
+  describe('requireAdmin', () => {
+    it('should allow admin user', () => {
       mockRequest.user!.role = 'admin';
-      const middleware = requireRole('admin');
 
-      middleware(mockRequest as Request, mockResponse as Response, nextFunction);
+      requireAdmin(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalledWith();
     });
 
-    it('should allow user with one of multiple roles', () => {
-      mockRequest.user!.role = 'admin';
-      const middleware = requireRole('user', 'admin');
-
-      middleware(mockRequest as Request, mockResponse as Response, nextFunction);
-
-      expect(nextFunction).toHaveBeenCalledWith();
-    });
-
-    it('should throw ForbiddenError for insufficient permissions', () => {
+    it('should reject non-admin user', () => {
       mockRequest.user!.role = 'user';
-      const middleware = requireRole('admin');
 
-      expect(() => {
-        middleware(mockRequest as Request, mockResponse as Response, nextFunction);
-      }).toThrow(ForbiddenError);
-    });
+      requireAdmin(mockRequest as Request, mockResponse as Response, nextFunction);
 
-    it('should throw error with correct message', () => {
-      mockRequest.user!.role = 'user';
-      const middleware = requireRole('admin');
-
-      expect(() => {
-        middleware(mockRequest as Request, mockResponse as Response, nextFunction);
-      }).toThrow('Insufficient permissions');
-    });
-
-    it('should not call next() when role check fails', () => {
-      mockRequest.user!.role = 'user';
-      const middleware = requireRole('admin');
-
-      expect(() => {
-        middleware(mockRequest as Request, mockResponse as Response, nextFunction);
-      }).toThrow();
-
-      expect(nextFunction).not.toHaveBeenCalled();
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(ForbiddenError));
     });
   });
 });

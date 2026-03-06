@@ -1,64 +1,28 @@
 /**
  * User Routes
- * Endpoints for user management and profiles
+ * Only custom endpoints not handled by better-auth (admin approval workflow)
  */
 
 import { Router } from 'express';
 import { requireAuth, requireAdmin } from '../middleware/auth.middleware.js';
-import { validateBody } from '../middleware/validation.middleware.js';
-import {
-  updateProfileSchema,
-  updateUserRoleSchema,
-  banUserSchema,
-} from '@webapp/shared';
 import * as userController from '../controllers/user.controller.js';
 
 const router = Router();
 
 // =============================================================================
-// Current User Routes (authenticated users)
+// Admin Approval Routes (custom business logic, not in better-auth)
 // =============================================================================
 
-// Get current user profile
-router.get('/me', requireAuth, userController.getCurrentUser);
+// List users pending admin approval
+router.get('/pending', requireAuth, requireAdmin, userController.listPendingApprovals);
 
-// Update current user profile
-router.patch(
-  '/me',
-  requireAuth,
-  validateBody(updateProfileSchema),
-  userController.updateCurrentUser
-);
+// Get count of pending approvals
+router.get('/pending/count', requireAuth, requireAdmin, userController.getPendingCount);
 
-// =============================================================================
-// Admin Routes (admin only)
-// =============================================================================
+// Approve pending user
+router.post('/:id/approve', requireAuth, requireAdmin, userController.approveUser);
 
-// List all users with pagination and filtering
-router.get('/', requireAuth, requireAdmin, userController.listUsers);
-
-// Get user by ID
-router.get('/:id', requireAuth, requireAdmin, userController.getUserById);
-
-// Update user role
-router.patch(
-  '/:id/role',
-  requireAuth,
-  requireAdmin,
-  validateBody(updateUserRoleSchema),
-  userController.updateUserRole
-);
-
-// Ban user
-router.post(
-  '/:id/ban',
-  requireAuth,
-  requireAdmin,
-  validateBody(banUserSchema),
-  userController.banUser
-);
-
-// Unban user
-router.post('/:id/unban', requireAuth, requireAdmin, userController.unbanUser);
+// Reject pending user
+router.post('/:id/reject', requireAuth, requireAdmin, userController.rejectUser);
 
 export default router;

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,17 +15,28 @@ export default function SignupPage() {
     email: '',
     password: '',
   });
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const signupMutation = useMutation({
-    mutationFn: async (data: { name: string; email: string; password: string }) => {
-      const response = await api.post('/api/auth/sign-up/email', data);
-      return response.data;
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    signupMutation.mutate(formData);
+    setError(null);
+    setIsPending(true);
+
+    const { error: signUpError } = await authClient.signUp.email({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    setIsPending(false);
+
+    if (signUpError) {
+      setError(signUpError.message || 'Failed to create account. Please try again.');
+    } else {
+      setIsSuccess(true);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,7 +44,7 @@ export default function SignupPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  if (signupMutation.isSuccess) {
+  if (isSuccess) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
         <Card className="w-full max-w-md">
@@ -52,6 +62,10 @@ export default function SignupPage() {
                 Please check your inbox and click the link to verify your account.
               </AlertDescription>
             </Alert>
+            <p className="text-sm text-muted-foreground">
+              After verification, an administrator will review and approve your account.
+              You'll receive an email once approved.
+            </p>
             <p className="text-sm text-muted-foreground">
               Didn't receive the email? Check your spam folder or try signing up again.
             </p>
@@ -77,14 +91,10 @@ export default function SignupPage() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            {signupMutation.error && (
+            {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {signupMutation.error instanceof Error
-                    ? signupMutation.error.message
-                    : 'Failed to create account. Please try again.'}
-                </AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
@@ -98,7 +108,7 @@ export default function SignupPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
             </div>
 
@@ -112,7 +122,7 @@ export default function SignupPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
             </div>
 
@@ -127,7 +137,7 @@ export default function SignupPage() {
                 onChange={handleChange}
                 required
                 minLength={8}
-                disabled={signupMutation.isPending}
+                disabled={isPending}
               />
               <p className="text-xs text-muted-foreground">
                 Must contain at least 8 characters, including uppercase, lowercase, number, and special character
@@ -138,9 +148,9 @@ export default function SignupPage() {
             <Button
               type="submit"
               className="w-full"
-              disabled={signupMutation.isPending}
+              disabled={isPending}
             >
-              {signupMutation.isPending && (
+              {isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Create account

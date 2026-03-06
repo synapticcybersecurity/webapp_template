@@ -87,7 +87,7 @@ export async function listProjects(
         where: { userId },
         select: { organizationId: true },
       })
-      .then((memberships) => memberships.map((m) => m.organizationId));
+      .then((memberships: { organizationId: string }[]) => memberships.map((m: { organizationId: string }) => m.organizationId));
 
     const where: any = {
       OR: [
