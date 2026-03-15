@@ -65,23 +65,23 @@ describe('Error Classes', () => {
   });
 
   describe('ValidationError', () => {
-    it('should create 422 error with validation errors', () => {
-      const errors = [
-        { field: 'email', message: 'Invalid email' },
-        { field: 'password', message: 'Too short' },
-      ];
-      const error = new ValidationError('Validation failed', errors);
+    it('should create 422 error with validation details', () => {
+      const details = {
+        email: 'Invalid email',
+        password: 'Too short',
+      };
+      const error = new ValidationError('Validation failed', details);
 
       expect(error.message).toBe('Validation failed');
       expect(error.statusCode).toBe(422);
-      expect(error.errors).toEqual(errors);
+      expect(error.details).toEqual(details);
     });
 
-    it('should work without errors array', () => {
+    it('should work without details', () => {
       const error = new ValidationError('Validation failed');
       expect(error.message).toBe('Validation failed');
       expect(error.statusCode).toBe(422);
-      expect(error.errors).toBeUndefined();
+      expect(error.details).toBeUndefined();
     });
   });
 });

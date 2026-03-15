@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { authClient } from '@/lib/auth-client';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,14 +19,20 @@ import {
   Shield,
   Crown,
   Trash2,
+  CreditCard,
 } from 'lucide-react';
 
 export default function OrganizationDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const { data: organization, isLoading, error } = useQuery({
+  const {
+    data: organization,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['organization', id],
     queryFn: async () => {
       const { data, error } = await authClient.organization.getFull({
@@ -122,10 +128,16 @@ export default function OrganizationDetailsPage() {
             </div>
           </div>
           {isOwnerOrAdmin && (
-            <Button variant="outline">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => navigate(`/organizations/${id}/billing`)}>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Billing
+              </Button>
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </div>
           )}
         </div>
 
@@ -147,9 +159,7 @@ export default function OrganizationDetailsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Team Members</CardTitle>
-                    <CardDescription>
-                      Manage who has access to this organization
-                    </CardDescription>
+                    <CardDescription>Manage who has access to this organization</CardDescription>
                   </div>
                   {isOwnerOrAdmin && (
                     <Button>

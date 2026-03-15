@@ -13,6 +13,8 @@ import ProfilePage from './pages/dashboard/ProfilePage';
 import OrganizationListPage from './pages/organization/OrganizationListPage';
 import OrganizationDetailsPage from './pages/organization/OrganizationDetailsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import PricingPage from './pages/billing/PricingPage';
+import BillingPage from './pages/billing/BillingPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,12 +37,16 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
 
+          {/* Public routes (pricing visible to all) */}
+          <Route path="/pricing" element={<PricingPage />} />
+
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/organizations" element={<OrganizationListPage />} />
             <Route path="/organizations/:id" element={<OrganizationDetailsPage />} />
+            <Route path="/organizations/:orgId/billing" element={<BillingPage />} />
           </Route>
 
           {/* Admin routes */}

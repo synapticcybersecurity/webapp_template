@@ -389,6 +389,39 @@ async function main() {
   console.log(`  ✓ Created ${tasks.count} tasks`);
 
   // =============================================================================
+  // SUBSCRIPTIONS (Free plan by default)
+  // =============================================================================
+
+  console.log('\n💳 Creating subscriptions...');
+
+  await prisma.subscription.upsert({
+    where: { organizationId: acme.id },
+    update: {},
+    create: {
+      organizationId: acme.id,
+      stripeCustomerId: 'cus_test_acme',
+      status: 'active',
+      plan: 'pro',
+      billingInterval: 'monthly',
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+  console.log(`  ✓ Acme Corp: Pro plan (test data)`);
+
+  await prisma.subscription.upsert({
+    where: { organizationId: techStartup.id },
+    update: {},
+    create: {
+      organizationId: techStartup.id,
+      stripeCustomerId: 'cus_test_techstartup',
+      status: 'inactive',
+      plan: 'free',
+    },
+  });
+  console.log(`  ✓ Tech Startup: Free plan`);
+
+  // =============================================================================
   // SUMMARY
   // =============================================================================
 
@@ -400,6 +433,7 @@ async function main() {
   console.log(`  • Pending invitations: 1`);
   console.log(`  • Projects: 4`);
   console.log(`  • Tasks: ${tasks.count}`);
+  console.log(`  • Subscriptions: 2 (1 Pro, 1 Free)`);
   console.log('\n🔑 Test credentials:');
   console.log('  Admin: admin@example.com / Admin123!');
   console.log('  User 1: user1@example.com / User123!');

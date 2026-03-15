@@ -49,8 +49,15 @@ export const userAPI = {
   listPendingApprovals: () => api.get('/api/users/pending'),
   getPendingCount: () => api.get('/api/users/pending/count'),
   approveUser: (id: string) => api.post(`/api/users/${id}/approve`),
-  rejectUser: (id: string, reason?: string) =>
-    api.post(`/api/users/${id}/reject`, { reason }),
+  rejectUser: (id: string, reason?: string) => api.post(`/api/users/${id}/reject`, { reason }),
+};
+
+export const billingAPI = {
+  listPlans: () => api.get('/api/billing/plans'),
+  getBillingOverview: (orgId: string) => api.get(`/api/billing/${orgId}`),
+  createCheckout: (orgId: string, data: { plan: string; interval: string }) =>
+    api.post(`/api/billing/${orgId}/checkout`, data),
+  createPortal: (orgId: string) => api.post(`/api/billing/${orgId}/portal`),
 };
 
 export const projectAPI = {

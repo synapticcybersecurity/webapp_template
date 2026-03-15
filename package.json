@@ -64,6 +64,14 @@
     "multi-tenant",
     "monorepo"
   ],
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
   "author": "",
   "license": "MIT"
 }

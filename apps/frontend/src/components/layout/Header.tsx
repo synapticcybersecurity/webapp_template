@@ -39,7 +39,10 @@ export function Header() {
 
   const getInitials = (name: string | null | undefined): string => {
     if (!name) return 'U';
-    const parts = name.trim().split(' ').filter(p => p.length > 0);
+    const parts = name
+      .trim()
+      .split(' ')
+      .filter((p) => p.length > 0);
     if (parts.length >= 2) {
       const first = parts[0]?.[0] || '';
       const last = parts[parts.length - 1]?.[0] || '';
@@ -73,6 +76,12 @@ export function Header() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Organizations
+            </Link>
+            <Link
+              to="/pricing"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Pricing
             </Link>
             {user?.role === 'admin' && (
               <Link
