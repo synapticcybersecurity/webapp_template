@@ -19,7 +19,7 @@ const mockSignIn = vi.fn();
 vi.mock('@/lib/auth-client', () => ({
   authClient: {
     signIn: {
-      email: (...args: any[]) => mockSignIn(...args),
+      email: (...args: unknown[]) => mockSignIn(...args),
     },
   },
 }));

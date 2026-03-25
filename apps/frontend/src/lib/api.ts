@@ -94,10 +94,11 @@ export const meteringAPI = {
 };
 
 export const projectAPI = {
-  listProjects: (params?: any) => api.get('/api/projects', { params }),
+  listProjects: (params?: Record<string, unknown>) => api.get('/api/projects', { params }),
   getProject: (id: string) => api.get(`/api/projects/${id}`),
-  createProject: (data: any) => api.post('/api/projects', data),
-  updateProject: (id: string, data: any) => api.patch(`/api/projects/${id}`, data),
+  createProject: (data: Record<string, unknown>) => api.post('/api/projects', data),
+  updateProject: (id: string, data: Record<string, unknown>) =>
+    api.patch(`/api/projects/${id}`, data),
   deleteProject: (id: string) => api.delete(`/api/projects/${id}`),
 };
 

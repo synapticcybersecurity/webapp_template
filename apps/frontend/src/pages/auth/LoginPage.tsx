@@ -4,7 +4,14 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, Clock } from 'lucide-react';
 
@@ -30,7 +37,11 @@ export default function LoginPage() {
 
     if (signInError) {
       const msg = signInError.message?.toLowerCase() ?? '';
-      if ((signInError as any).code === 'USER_IS_BANNED' || msg.includes('banned') || signInError.status === 403) {
+      if (
+        (signInError as { code?: string }).code === 'USER_IS_BANNED' ||
+        msg.includes('banned') ||
+        signInError.status === 403
+      ) {
         setShowPendingApproval(true);
       } else {
         setError(signInError.message || 'Failed to sign in. Please check your credentials.');
@@ -54,9 +65,7 @@ export default function LoginPage() {
               <Clock className="h-6 w-6 text-amber-500" />
               <CardTitle className="text-2xl font-bold">Account Pending Approval</CardTitle>
             </div>
-            <CardDescription>
-              Your account is waiting for administrator review
-            </CardDescription>
+            <CardDescription>Your account is waiting for administrator review</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
@@ -90,9 +99,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-          <CardDescription>
-            Enter your email and password to access your account
-          </CardDescription>
+          <CardDescription>Enter your email and password to access your account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -120,10 +127,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -139,14 +143,8 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isPending}
-            >
-              {isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign in
             </Button>
 

@@ -103,7 +103,9 @@ export default function OrganizationDetailsPage() {
   }
 
   const members = organization.members || [];
-  const currentUserMember = members.find((m: any) => m.userId === user?.id);
+  const currentUserMember = members.find(
+    (m: { userId: string; role: string }) => m.userId === user?.id
+  );
   const isOwnerOrAdmin = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
 
   return (
@@ -171,41 +173,48 @@ export default function OrganizationDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {members.map((member: any) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between rounded-lg border p-4"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                          {member.user?.name?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{member.user?.name || 'Unknown User'}</p>
-                            <Badge variant={getRoleBadgeVariant(member.role)}>
-                              {getRoleIcon(member.role)}
-                              <span className="ml-1">{member.role}</span>
-                            </Badge>
+                  {members.map(
+                    (member: {
+                      id: string;
+                      userId: string;
+                      role: string;
+                      user?: { name?: string; email?: string };
+                    }) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between rounded-lg border p-4"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                            {member.user?.name?.charAt(0).toUpperCase() || 'U'}
                           </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Mail className="h-3 w-3" />
-                            {member.user?.email}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{member.user?.name || 'Unknown User'}</p>
+                              <Badge variant={getRoleBadgeVariant(member.role)}>
+                                {getRoleIcon(member.role)}
+                                <span className="ml-1">{member.role}</span>
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Mail className="h-3 w-3" />
+                              {member.user?.email}
+                            </div>
                           </div>
                         </div>
+                        {isOwnerOrAdmin && member.role !== 'owner' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeMemberMutation.mutate(member.id)}
+                            disabled={removeMemberMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
-                      {isOwnerOrAdmin && member.role !== 'owner' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeMemberMutation.mutate(member.id)}
-                          disabled={removeMemberMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -247,13 +256,13 @@ export default function OrganizationDetailsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Admins</span>
                     <span className="text-2xl font-bold">
-                      {members.filter((m: any) => m.role === 'admin').length}
+                      {members.filter((m: { role: string }) => m.role === 'admin').length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Owners</span>
                     <span className="text-2xl font-bold">
-                      {members.filter((m: any) => m.role === 'owner').length}
+                      {members.filter((m: { role: string }) => m.role === 'owner').length}
                     </span>
                   </div>
                 </CardContent>

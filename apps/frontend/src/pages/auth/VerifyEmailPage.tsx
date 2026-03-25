@@ -3,7 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 
@@ -21,10 +28,15 @@ export default function VerifyEmailPage() {
   });
 
   useEffect(() => {
-    if (token && !verifyMutation.isSuccess && !verifyMutation.isPending && !verifyMutation.isError) {
+    if (
+      token &&
+      !verifyMutation.isSuccess &&
+      !verifyMutation.isPending &&
+      !verifyMutation.isError
+    ) {
       verifyMutation.mutate(token);
     }
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // No token — show a "check your email" message
   if (!token) {
@@ -33,9 +45,7 @@ export default function VerifyEmailPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Verify your email</CardTitle>
-            <CardDescription>
-              We sent you a verification link
-            </CardDescription>
+            <CardDescription>We sent you a verification link</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex justify-center py-4">
@@ -44,8 +54,8 @@ export default function VerifyEmailPage() {
             <Alert>
               <Mail className="h-4 w-4" />
               <AlertDescription>
-                Please check your inbox and click the verification link to activate your account.
-                If you don't see it, check your spam folder.
+                Please check your inbox and click the verification link to activate your account. If
+                you don't see it, check your spam folder.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -68,9 +78,7 @@ export default function VerifyEmailPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Verifying your email</CardTitle>
-            <CardDescription>
-              Please wait while we verify your email address
-            </CardDescription>
+            <CardDescription>Please wait while we verify your email address</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center py-8">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -87,9 +95,7 @@ export default function VerifyEmailPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Verification failed</CardTitle>
-            <CardDescription>
-              We couldn't verify your email address
-            </CardDescription>
+            <CardDescription>We couldn't verify your email address</CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
@@ -122,9 +128,7 @@ export default function VerifyEmailPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Email verified</CardTitle>
-          <CardDescription>
-            Your email address has been verified
-          </CardDescription>
+          <CardDescription>Your email address has been verified</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert>

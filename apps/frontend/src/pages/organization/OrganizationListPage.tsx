@@ -9,7 +9,11 @@ import { Building2, Users, Plus, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function OrganizationListPage() {
-  const { data: organizations, isLoading, error } = useQuery({
+  const {
+    data: organizations,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['organizations'],
     queryFn: async () => {
       const { data, error } = await authClient.organization.list();
@@ -24,9 +28,7 @@ export default function OrganizationListPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
-            <p className="text-muted-foreground">
-              Manage your organizations and team memberships
-            </p>
+            <p className="text-muted-foreground">Manage your organizations and team memberships</p>
           </div>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -67,46 +69,56 @@ export default function OrganizationListPage() {
 
         {!isLoading && !error && organizations && organizations.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {organizations.map((org: any) => (
-              <Link key={org.id} to={`/organizations/${org.id}`}>
-                <Card className="transition-shadow hover:shadow-lg">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        {org.logo ? (
-                          <img
-                            src={org.logo}
-                            alt={org.name}
-                            className="h-12 w-12 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-xl font-bold text-primary-foreground">
-                            {org.name.charAt(0).toUpperCase()}
+            {organizations.map(
+              (org: {
+                id: string;
+                name: string;
+                slug: string;
+                logo?: string;
+                members?: { role: string }[];
+              }) => (
+                <Link key={org.id} to={`/organizations/${org.id}`}>
+                  <Card className="transition-shadow hover:shadow-lg">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          {org.logo ? (
+                            <img
+                              src={org.logo}
+                              alt={org.name}
+                              className="h-12 w-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-xl font-bold text-primary-foreground">
+                              {org.name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <CardTitle className="text-lg">{org.name}</CardTitle>
+                            <CardDescription className="text-xs">@{org.slug}</CardDescription>
                           </div>
-                        )}
-                        <div>
-                          <CardTitle className="text-lg">{org.name}</CardTitle>
-                          <CardDescription className="text-xs">@{org.slug}</CardDescription>
                         </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>{org.members?.length || 0} members</span>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>{org.members?.length || 0} members</span>
+                        </div>
+                        {org.members?.[0]?.role && (
+                          <Badge
+                            variant={org.members[0].role === 'owner' ? 'default' : 'secondary'}
+                          >
+                            {org.members[0].role}
+                          </Badge>
+                        )}
                       </div>
-                      {org.members?.[0]?.role && (
-                        <Badge variant={org.members[0].role === 'owner' ? 'default' : 'secondary'}>
-                          {org.members[0].role}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            )}
           </div>
         )}
       </div>
