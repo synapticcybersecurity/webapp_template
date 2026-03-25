@@ -5,7 +5,14 @@ import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -61,7 +68,10 @@ function ChangePasswordCard() {
     setIsPending(false);
 
     if (changeError) {
-      setError(changeError.message || 'Failed to change password. Please check your current password and try again.');
+      setError(
+        changeError.message ||
+          'Failed to change password. Please check your current password and try again.'
+      );
     } else {
       setIsSuccess(true);
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -136,7 +146,8 @@ function ChangePasswordCard() {
               disabled={isPending}
             />
             <p className="text-xs text-muted-foreground">
-              Must contain at least 8 characters, including uppercase, lowercase, number, and special character
+              Must contain at least 8 characters, including uppercase, lowercase, number, and
+              special character
             </p>
           </div>
 
@@ -152,9 +163,7 @@ function ChangePasswordCard() {
               minLength={8}
               disabled={isPending}
             />
-            {passwordMismatch && (
-              <p className="text-xs text-destructive">Passwords do not match</p>
-            )}
+            {passwordMismatch && <p className="text-xs text-destructive">Passwords do not match</p>}
           </div>
         </CardContent>
         <CardFooter>
@@ -168,9 +177,7 @@ function ChangePasswordCard() {
               !formData.confirmPassword
             }
           >
-            {isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Change Password
           </Button>
         </CardFooter>
@@ -227,9 +234,7 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Account Information</CardTitle>
-              <CardDescription>
-                View and update your personal account details
-              </CardDescription>
+              <CardDescription>View and update your personal account details</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
@@ -298,23 +303,14 @@ export default function ProfilePage() {
                     <Mail className="mr-2 inline-block h-4 w-4" />
                     Email Address
                   </Label>
-                  <Input
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                  />
+                  <Input type="email" value={user?.email || ''} disabled />
                   <p className="text-xs text-muted-foreground">
                     Email changes are not yet supported
                   </p>
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={isPending || !hasChanges}
-                >
-                  {isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                <Button type="submit" disabled={isPending || !hasChanges}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
                 </Button>
               </form>

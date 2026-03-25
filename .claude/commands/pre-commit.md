@@ -26,6 +26,7 @@ This command acts as a gatekeeper for commits. It:
 ### 1. Initial Checks
 
 **Check what's staged:**
+
 ```bash
 # Get staged files
 git diff --cached --name-only
@@ -35,6 +36,7 @@ git diff --cached --quiet
 ```
 
 If nothing staged:
+
 - Inform user: "No changes staged for commit"
 - Exit early
 
@@ -43,6 +45,7 @@ If nothing staged:
 #### Sensitive Files (BLOCK)
 
 **Block commit if these are staged:**
+
 - `.env` (should be in .gitignore)
 - `secrets.yml`
 - `credentials.json`
@@ -54,11 +57,13 @@ If nothing staged:
 #### Large Files (WARN)
 
 **Check file sizes:**
+
 ```bash
 git diff --cached --name-only | xargs ls -lh
 ```
 
 **Warn if files > 10MB:**
+
 - Binary files should use Git LFS
 - Log files shouldn't be committed
 - Database dumps shouldn't be committed
@@ -66,6 +71,7 @@ git diff --cached --name-only | xargs ls -lh
 #### Unintended Files (BLOCK)
 
 **Common mistakes:**
+
 - `node_modules/` files
 - `__pycache__/` or `.pyc` files
 - Build artifacts (`dist/`, `build/`)
@@ -87,6 +93,7 @@ grep -n "API[-_]KEY\|SECRET\|PASSWORD\|TOKEN\|PRIVATE[-_]KEY" [files]
 ```
 
 **Look for patterns:**
+
 ```regex
 # API Keys (20+ characters)
 [aA][pP][iI][-_]?[kK][eE][yY]\s*=\s*['"]\w{20,}['"]
@@ -105,12 +112,14 @@ eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+
 ```
 
 **Exceptions (don't flag):**
+
 - Lines in `.env.example` (template file)
 - Comments explaining what keys are needed
 - Variable names without values
 - Test fixtures with obvious fake data
 
 **If secrets found:**
+
 - **BLOCK COMMIT**
 - Show exact location
 - Explain why it's dangerous
@@ -121,53 +130,63 @@ eyJ[A-Za-z0-9-_=]+\.eyJ[A-Za-z0-9-_=]+
 **Detect language and run appropriate linter on staged files:**
 
 #### Python
+
 ```bash
 git diff --cached --name-only --diff-filter=ACM | grep '\.py$' | xargs ruff check
 ```
 
 **Block on:**
+
 - Syntax errors
 - Undefined variables
 - Import errors
 
 **Warn on:**
+
 - Style violations
 - Unused imports
 - Line length
 
 #### JavaScript/TypeScript
+
 ```bash
 git diff --cached --name-only --diff-filter=ACM | grep '\.\(js\|jsx\|ts\|tsx\)$' | xargs npx eslint
 ```
 
 **Block on:**
+
 - Syntax errors
 - Undefined variables
 - Type errors (TypeScript)
 
 **Warn on:**
+
 - Console.log statements
 - Style violations
 - Unused variables
 
 #### Go
+
 ```bash
 git diff --cached --name-only --diff-filter=ACM | grep '\.go$' | xargs gofmt -l
 git diff --cached --name-only --diff-filter=ACM | grep '\.go$' | xargs go vet
 ```
 
 **Block on:**
+
 - Syntax errors
 - Unformatted code (gofmt)
 - go vet errors
 
 #### Rust
+
 ```bash
 cargo fmt -- --check
 cargo clippy -- -D warnings
 ```
 
 **Block on:**
+
 - Syntax errors
 - Clippy errors
 - Unformatted code
@@ -177,26 +196,31 @@ cargo clippy -- -D warnings
 **Check if files are properly formatted:**
 
 #### Python
+
 ```bash
 git diff --cached --name-only --diff-filter=ACM | grep '\.py$' | xargs black --check
 ```
 
 #### JavaScript/TypeScript
+
 ```bash
 git diff --cached --name-only --diff-filter=ACM | grep '\.\(js\|jsx\|ts\|tsx\)$' | xargs npx prettier --check
 ```
 
 #### Go
+
 ```bash
 git diff --cached --name-only --diff-filter=ACM | grep '\.go$' | xargs gofmt -l
 ```
 
 #### Rust
+
 ```bash
 cargo fmt -- --check
 ```
 
 **If formatting issues found:**
+
 - **Offer to auto-fix**
 - Don't block, but strongly recommend fixing
 
@@ -205,20 +229,24 @@ cargo fmt -- --check
 **For statically typed or type-hinted code:**
 
 #### Python (with type hints)
+
 ```bash
 mypy [staged .py files]
 ```
 
 #### TypeScript
+
 ```bash
 npx tsc --noEmit
 ```
 
 **Block on:**
+
 - Type errors
 - Missing required type annotations (if strict mode)
 
 **Warn on:**
+
 - Use of `any` type
 - Implicit any
 
@@ -227,6 +255,7 @@ npx tsc --noEmit
 **Run tests related to changed code:**
 
 #### Python
+
 ```bash
 # Run all tests
 pytest
@@ -236,6 +265,7 @@ pytest --cov=[changed modules] --cov-fail-under=70
 ```
 
 #### JavaScript/TypeScript
+
 ```bash
 # Run tests
 npm test
@@ -245,6 +275,7 @@ npm test -- --coverage --changedSince=HEAD
 ```
 
 #### Go
+
 ```bash
 # Run all tests
 go test ./...
@@ -254,21 +285,25 @@ go test [changed packages]
 ```
 
 #### Rust
+
 ```bash
 cargo test
 ```
 
 **Block on:**
+
 - Test failures
 - Newly failing tests
 - Critical code without tests
 
 **Warn on:**
+
 - Coverage decrease
 - Skipped tests
 - Slow tests (> 1 minute total)
 
 **Performance consideration:**
+
 - For large test suites, only run affected tests
 - Offer to skip tests if user is in a hurry (but warn!)
 
@@ -279,6 +314,7 @@ cargo test
 #### New functions/classes without docstrings
 
 **Warn if:**
+
 - New public functions lack docstrings
 - New classes lack docstrings
 - Complex logic lacks comments
@@ -286,6 +322,7 @@ cargo test
 #### README updates
 
 **If code changes affect:**
+
 - API endpoints (check if README/docs updated)
 - Configuration (check if .env.example updated)
 - Installation (check if setup docs updated)
@@ -298,6 +335,7 @@ cargo test
 **Check commit message quality:**
 
 **Good format:**
+
 ```
 <type>: <short summary>
 
@@ -309,15 +347,18 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 **Types:**
+
 - feat, fix, docs, style, refactor, test, chore, security, perf
 
 **Validate:**
+
 - Message is not empty
 - Message is descriptive (not "fix" or "wip")
 - First line is < 72 characters (recommended)
 - Type prefix present (recommended)
 
 **If poor message:**
+
 - Suggest improvements
 - Don't block (user's choice)
 
@@ -326,11 +367,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 **Verify TODO list is up-to-date:**
 
 **Check if:**
+
 - TODO list was used during session
 - Current task marked as completed
 - No tasks still marked as in_progress
 
 **If TODO list exists and task not completed:**
+
 - **Ask**: "Should I mark the current task as completed?"
 - **Update** TODO list if user confirms
 
@@ -339,21 +382,25 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 **If dependency files changed:**
 
 #### Python
+
 - `requirements.txt` or `pyproject.toml` changed
 - Check if `pip install` needed
 - Check for security vulnerabilities: `pip-audit`
 
 #### JavaScript
+
 - `package.json` or `package-lock.json` changed
 - Check if `npm install` needed
 - Run `npm audit`
 
 #### Go
+
 - `go.mod` or `go.sum` changed
 - Run `go mod download` if needed
 - Run `govulncheck`
 
 #### Rust
+
 - `Cargo.toml` changed
 - Run `cargo build` if needed
 - Run `cargo audit`
@@ -365,6 +412,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ### Critical Issues (Block Commit)
 
 **Block if any of these found:**
+
 1. Secrets/credentials in code
 2. Sensitive files staged (.env, keys)
 3. Syntax errors
@@ -373,6 +421,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 6. Type errors (if type checking enabled)
 
 **Action:**
+
 ```
 ❌ COMMIT BLOCKED
 
@@ -391,6 +440,7 @@ Commands to run:
 ### High Priority (Warn but Allow)
 
 **Warn if found:**
+
 1. Formatting issues
 2. Unused imports/variables
 3. Console.log or debug statements
@@ -399,6 +449,7 @@ Commands to run:
 6. Code complexity issues
 
 **Action:**
+
 ```
 ⚠️  WARNING
 
@@ -413,11 +464,13 @@ Proceed with commit? (yes/no)
 ### Medium Priority (Inform)
 
 **Inform if found:**
+
 1. Style violations (minor)
 2. Long lines
 3. Minor linting warnings
 
 **Action:**
+
 ```
 ℹ️  INFO
 
@@ -433,6 +486,7 @@ These can be fixed later.
 **Offer to automatically fix:**
 
 ### Formatting
+
 ```
 Found [X] formatting issues. Auto-fix?
   black .               # Python
@@ -442,6 +496,7 @@ Found [X] formatting issues. Auto-fix?
 ```
 
 ### Unused Imports
+
 ```
 Found [X] unused imports. Auto-fix?
   ruff check --fix .           # Python
@@ -449,6 +504,7 @@ Found [X] unused imports. Auto-fix?
 ```
 
 ### Add to .gitignore
+
 ```
 .env is staged but shouldn't be committed. Auto-fix?
   git reset .env
@@ -458,7 +514,7 @@ Found [X] unused imports. Auto-fix?
 
 ## Report Format
 
-```markdown
+````markdown
 # Pre-Commit Validation Report
 
 **Date**: [Date]
@@ -500,9 +556,12 @@ Found [X] unused imports. Auto-fix?
 [List if blocked]
 
 **After Fixing**:
+
 ```bash
 git commit
 ```
+````
+
 ```
 
 ## Decision Logic
@@ -546,11 +605,13 @@ git commit
 
 **Estimated times to report:**
 ```
+
 Running pre-commit validation...
-[=====>                ] 30% (Linting complete - 2s)
-[============>         ] 60% (Tests running - 15s)
+[=====> ] 30% (Linting complete - 2s)
+[============> ] 60% (Tests running - 15s)
 [===================> ] 95% (Security scan - 1s)
 [=====================] 100% Complete (18s total)
+
 ```
 
 ## Questions to Ask User
@@ -577,3 +638,4 @@ Before allowing commit:
 - [ ] Commit message validated
 - [ ] User informed of any warnings
 - [ ] Auto-fix options offered
+```

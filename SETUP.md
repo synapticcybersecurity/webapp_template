@@ -12,6 +12,7 @@ Before you begin, ensure you have the following installed:
 - **Git** (for version control)
 
 Verify installations:
+
 ```bash
 node --version  # Should be v20.x or higher
 npm --version   # Should be 10.x or higher
@@ -41,6 +42,7 @@ npm install
 ```
 
 This will install dependencies for:
+
 - Root workspace
 - Backend (`apps/backend`)
 - Frontend (`apps/frontend`)
@@ -99,6 +101,7 @@ FRONTEND_URL="http://localhost:5173"
 ```
 
 **Important Notes:**
+
 - **BETTER_AUTH_SECRET**: Generate a secure random string (minimum 32 characters). You can use: `openssl rand -base64 32`
 - **POSTMARK_API_KEY**: Sign up at [Postmark](https://postmarkapp.com) for a free account to get an API key
 - **FROM_EMAIL**: Must be verified in your Postmark account
@@ -117,6 +120,7 @@ cat .env
 ```
 
 **Frontend .env (defaults are fine):**
+
 ```bash
 VITE_API_URL="http://localhost:3001"
 VITE_ENABLE_ORGANIZATIONS=true
@@ -138,16 +142,19 @@ npm run docker:up
 ```
 
 **What this does:**
+
 - Starts PostgreSQL 16 on port 5432
 - Starts Redis 7 on port 6379
 - Starts pgAdmin on port 5050
 
 **Verify services are running:**
+
 ```bash
 docker ps
 ```
 
 You should see three containers running:
+
 - `webapp-postgres`
 - `webapp-redis`
 - `webapp-pgadmin`
@@ -180,11 +187,13 @@ npm run prisma:migrate dev
 ```
 
 **What this does:**
+
 - Creates all database tables
 - Sets up the Better Auth schema
 - Creates tables for organizations, projects, tasks
 
 **Expected output:**
+
 ```
 ✔ Generated Prisma Client
 ✔ The migration has been created successfully
@@ -197,12 +206,14 @@ npm run prisma:seed
 ```
 
 **What this creates:**
+
 - Admin user (admin@example.com)
 - Two regular users (user1@example.com, user2@example.com)
 - Two organizations with members
 - Sample projects and tasks
 
 **Expected output:**
+
 ```
 🌱 Database seeded successfully!
 ✅ Created admin user
@@ -238,10 +249,12 @@ npm run dev
 ```
 
 This starts both servers concurrently:
+
 - **Backend:** http://localhost:3001
 - **Frontend:** http://localhost:5173
 
 **Expected output:**
+
 ```
 [backend] Server started on port 3001
 [backend] Database connected
@@ -254,11 +267,13 @@ This starts both servers concurrently:
 If you prefer to run them in separate terminals:
 
 **Terminal 1 - Backend:**
+
 ```bash
 npm run dev:backend
 ```
 
 **Terminal 2 - Frontend:**
+
 ```bash
 npm run dev:frontend
 ```
@@ -274,16 +289,19 @@ You should see the login page.
 ### 7.2 Log In with Test Credentials
 
 **Admin Account:**
+
 - Email: `admin@example.com`
 - Password: `Admin123!`
 
 **Regular User Account:**
+
 - Email: `user1@example.com`
 - Password: `User123!`
 
 ### 7.3 Explore the Application
 
 After logging in, you can:
+
 - View the dashboard with stats and activity
 - Edit your profile at `/profile`
 - View organizations at `/organizations`
@@ -316,6 +334,7 @@ After logging in, you can:
 Visit: http://localhost:3001/api/auth/session
 
 You should see either:
+
 - `{"session":null,"user":null}` (if not logged in)
 - Your session data (if logged in)
 
@@ -339,10 +358,12 @@ You can browse and edit all database tables here.
 Access pgAdmin at: **http://localhost:5050**
 
 **Credentials:**
+
 - Email: `admin@admin.com`
 - Password: `admin`
 
 **To connect to PostgreSQL:**
+
 1. Right-click "Servers" → "Register" → "Server"
 2. General tab: Name = `WebApp DB`
 3. Connection tab:
@@ -359,6 +380,7 @@ Access pgAdmin at: **http://localhost:5050**
 **Problem:** Port 3001, 5173, 5432, or 6379 already in use
 
 **Solution:**
+
 ```bash
 # Find what's using the port (example for 3001)
 lsof -ti:3001
@@ -374,6 +396,7 @@ lsof -ti:3001 | xargs kill -9
 **Problem:** Docker containers fail to start
 
 **Solution:**
+
 ```bash
 # Stop all containers
 npm run docker:down
@@ -395,6 +418,7 @@ npm run prisma:seed
 **Problem:** Backend can't connect to PostgreSQL
 
 **Solution:**
+
 1. Verify Docker is running: `docker ps`
 2. Check PostgreSQL logs: `docker logs webapp-postgres`
 3. Verify DATABASE_URL in `apps/backend/.env`
@@ -405,6 +429,7 @@ npm run prisma:seed
 **Problem:** TypeScript errors about Prisma Client
 
 **Solution:**
+
 ```bash
 cd apps/backend
 npm run prisma:generate
@@ -415,6 +440,7 @@ npm run prisma:generate
 **Problem:** Frontend won't start or build
 
 **Solution:**
+
 ```bash
 # Clear node_modules
 cd apps/frontend
@@ -433,6 +459,7 @@ npm run build
 **Problem:** Verification emails not arriving
 
 **Solution:**
+
 - For development, email verification is optional
 - To actually send emails:
   1. Sign up at https://postmarkapp.com (free tier available)
@@ -445,6 +472,7 @@ npm run build
 **Problem:** Import errors for shared package
 
 **Solution:**
+
 ```bash
 # Rebuild shared package
 cd packages/shared
@@ -481,6 +509,7 @@ Now that your application is running:
 ## Useful Commands Reference
 
 ### Development
+
 ```bash
 npm run dev              # Start both frontend and backend
 npm run dev:backend      # Start only backend
@@ -488,6 +517,7 @@ npm run dev:frontend     # Start only frontend
 ```
 
 ### Database
+
 ```bash
 npm run db:migrate       # Run migrations
 npm run db:seed          # Seed database
@@ -495,6 +525,7 @@ npm run db:studio        # Open Prisma Studio
 ```
 
 ### Docker
+
 ```bash
 npm run docker:up        # Start services
 npm run docker:down      # Stop services
@@ -503,6 +534,7 @@ docker logs webapp-postgres  # View PostgreSQL logs
 ```
 
 ### Building
+
 ```bash
 npm run build            # Build frontend and backend
 cd apps/frontend && npm run build  # Build only frontend
@@ -510,6 +542,7 @@ cd apps/backend && npm run build   # Build only backend
 ```
 
 ### Prisma
+
 ```bash
 cd apps/backend
 npm run prisma:generate  # Generate Prisma Client

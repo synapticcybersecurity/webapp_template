@@ -5,7 +5,14 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 
@@ -28,9 +35,7 @@ export default function ResetPasswordPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Invalid reset link</CardTitle>
-            <CardDescription>
-              This password reset link is invalid or has expired
-            </CardDescription>
+            <CardDescription>This password reset link is invalid or has expired</CardDescription>
           </CardHeader>
           <CardContent>
             <Alert variant="destructive">
@@ -56,15 +61,14 @@ export default function ResetPasswordPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Password reset successful</CardTitle>
-            <CardDescription>
-              Your password has been updated
-            </CardDescription>
+            <CardDescription>Your password has been updated</CardDescription>
           </CardHeader>
           <CardContent>
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
-                Your password has been successfully reset. You can now sign in with your new password.
+                Your password has been successfully reset. You can now sign in with your new
+                password.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -91,9 +95,7 @@ export default function ResetPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Reset your password</CardTitle>
-          <CardDescription>
-            Enter your new password below
-          </CardDescription>
+          <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -121,7 +123,8 @@ export default function ResetPasswordPage() {
                 disabled={resetMutation.isPending}
               />
               <p className="text-xs text-muted-foreground">
-                Must contain at least 8 characters, including uppercase, lowercase, number, and special character
+                Must contain at least 8 characters, including uppercase, lowercase, number, and
+                special character
               </p>
             </div>
 
@@ -148,9 +151,7 @@ export default function ResetPasswordPage() {
               className="w-full"
               disabled={resetMutation.isPending || passwordMismatch || newPassword.length < 8}
             >
-              {resetMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {resetMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Reset password
             </Button>
 

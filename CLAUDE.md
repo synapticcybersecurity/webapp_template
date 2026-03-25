@@ -32,6 +32,7 @@ git rev-parse --git-dir 2>/dev/null
 Ensure `.gitignore` exists and includes language-specific patterns:
 
 **Python:**
+
 ```
 __pycache__/
 *.py[cod]
@@ -49,6 +50,7 @@ build/
 ```
 
 **JavaScript/TypeScript:**
+
 ```
 node_modules/
 .npm
@@ -63,6 +65,7 @@ coverage/
 ```
 
 **Go:**
+
 ```
 *.exe
 *.exe~
@@ -76,6 +79,7 @@ vendor/
 ```
 
 **Rust:**
+
 ```
 target/
 Cargo.lock
@@ -84,6 +88,7 @@ Cargo.lock
 ```
 
 **Always exclude:**
+
 ```
 # Secrets and credentials
 .env
@@ -109,6 +114,7 @@ Thumbs.db
 ### Commit Discipline
 
 **When to Commit:**
+
 - After completing a feature
 - After fixing a bug
 - After refactoring
@@ -116,6 +122,7 @@ Thumbs.db
 - At logical breakpoints (working state)
 
 **Commit Message Format:**
+
 ```
 <type>: <short summary>
 
@@ -125,6 +132,7 @@ Thumbs.db
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `refactor`: Code refactoring
@@ -153,6 +161,7 @@ Thumbs.db
 ### When to Create TODO Lists
 
 **Always create a TODO list for:**
+
 - Multi-step tasks (3+ steps)
 - Complex features
 - Bug fixes requiring multiple changes
@@ -160,6 +169,7 @@ Thumbs.db
 - Refactoring efforts
 
 **Skip TODO lists for:**
+
 - Single, trivial tasks
 - Simple documentation updates
 - One-line fixes
@@ -175,6 +185,7 @@ Thumbs.db
 ### TODO Task Format
 
 Each task must have:
+
 - `content`: Imperative form (e.g., "Fix authentication bug")
 - `activeForm`: Present continuous (e.g., "Fixing authentication bug")
 - `status`: `pending`, `in_progress`, or `completed`
@@ -182,12 +193,14 @@ Each task must have:
 ### Completion Criteria
 
 **ONLY mark completed when:**
+
 - Feature fully implemented and working
 - All tests passing
 - No errors or blockers
 - Code reviewed and cleaned up
 
 **Do NOT mark completed if:**
+
 - Tests failing
 - Implementation partial
 - Unresolved errors
@@ -200,6 +213,7 @@ Each task must have:
 ### Language Detection
 
 Automatically detect project language by checking for:
+
 - Python: `requirements.txt`, `pyproject.toml`, `setup.py`, `*.py` files
 - JavaScript: `package.json`, `*.js` files
 - TypeScript: `tsconfig.json`, `*.ts` files
@@ -212,12 +226,14 @@ Automatically detect project language by checking for:
 ### Python Linting
 
 **Tools:**
+
 - `ruff` - Fast linter (replaces flake8, isort, pyupgrade)
 - `mypy` - Type checking
 - `black` - Code formatting
 - `bandit` - Security issues
 
 **Before committing:**
+
 ```bash
 # Format code
 black .
@@ -233,17 +249,20 @@ bandit -r . -x ./venv,./tests
 ```
 
 **Configuration files:**
+
 - `pyproject.toml` or `ruff.toml` for ruff
 - `mypy.ini` or `pyproject.toml` for mypy
 
 ### JavaScript/TypeScript Linting
 
 **Tools:**
+
 - `eslint` - Linting
 - `prettier` - Formatting
 - `typescript` - Type checking
 
 **Before committing:**
+
 ```bash
 # Format code
 npx prettier --write .
@@ -256,6 +275,7 @@ npx tsc --noEmit
 ```
 
 **Configuration files:**
+
 - `.eslintrc.js` or `eslint.config.js`
 - `.prettierrc`
 - `tsconfig.json`
@@ -263,11 +283,13 @@ npx tsc --noEmit
 ### Go Linting
 
 **Tools:**
+
 - `gofmt` - Formatting
 - `golangci-lint` - Meta-linter
 - `go vet` - Built-in issues
 
 **Before committing:**
+
 ```bash
 # Format
 gofmt -w .
@@ -282,10 +304,12 @@ go vet ./...
 ### Rust Linting
 
 **Tools:**
+
 - `rustfmt` - Formatting
 - `clippy` - Linter
 
 **Before committing:**
+
 ```bash
 # Format
 cargo fmt
@@ -334,6 +358,7 @@ cargo clippy -- -D warnings
 ### Security Scanning Commands
 
 **Python:**
+
 ```bash
 # Scan for secrets
 grep -r "API_KEY\|SECRET\|PASSWORD" --exclude-dir=venv .
@@ -346,6 +371,7 @@ bandit -r . -x ./venv
 ```
 
 **JavaScript/TypeScript:**
+
 ```bash
 # Check dependencies
 npm audit
@@ -355,6 +381,7 @@ grep -r "API_KEY\|SECRET\|PASSWORD" --exclude-dir=node_modules .
 ```
 
 **Go:**
+
 ```bash
 # Check dependencies
 govulncheck ./...
@@ -366,6 +393,7 @@ grep -r "API_KEY\|SECRET\|PASSWORD" --exclude-dir=vendor .
 ### Environment Variables
 
 **Rules:**
+
 - All secrets in `.env` files
 - Never commit `.env`
 - Provide `.env.example` template
@@ -373,6 +401,7 @@ grep -r "API_KEY\|SECRET\|PASSWORD" --exclude-dir=vendor .
 - Use strong defaults for non-secrets
 
 **Example `.env.example`:**
+
 ```bash
 # Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
@@ -409,6 +438,7 @@ DEBUG=false
 ### What to Test
 
 **Always test:**
+
 - New features (unit + integration)
 - Bug fixes (regression test)
 - Edge cases and error conditions
@@ -432,6 +462,7 @@ pytest tests/test_feature.py -v
 ```
 
 **Test structure:**
+
 ```python
 def test_feature_success():
     """Test that feature works correctly."""
@@ -460,6 +491,7 @@ npm test -- --watch
 ```
 
 **Test structure:**
+
 ```javascript
 describe('Feature', () => {
   it('should work correctly', () => {
@@ -487,6 +519,7 @@ go test -race ./...
 ```
 
 **Test structure:**
+
 ```go
 func TestFeature(t *testing.T) {
     result := MyFunction(validInput)
@@ -507,6 +540,7 @@ cargo test -- --nocapture
 ```
 
 **Test structure:**
+
 ```rust
 #[test]
 fn test_feature() {
@@ -518,12 +552,14 @@ fn test_feature() {
 ### Mocking External APIs
 
 **Always mock:**
+
 - Third-party APIs (OpenAI, Stripe, etc.)
 - Database calls in unit tests
 - File system operations
 - Network requests
 
 **Don't mock:**
+
 - Your own internal functions (test them directly)
 - Simple data transformations
 
@@ -534,6 +570,7 @@ fn test_feature() {
 ### Code Documentation
 
 **Functions/Methods:**
+
 ```python
 def calculate_total(items: List[Item], tax_rate: float) -> float:
     """
@@ -552,6 +589,7 @@ def calculate_total(items: List[Item], tax_rate: float) -> float:
 ```
 
 **Classes:**
+
 ```python
 class PaymentProcessor:
     """
@@ -584,6 +622,7 @@ Every project should have a `README.md` with:
 ### API Documentation
 
 **For web APIs:**
+
 - Document all endpoints
 - Include request/response examples
 - List required authentication
@@ -591,6 +630,7 @@ Every project should have a `README.md` with:
 - Document error codes
 
 **Tools:**
+
 - FastAPI: Auto-generated at `/docs`
 - Express: Use Swagger/OpenAPI
 - Go: Use swaggo
@@ -599,6 +639,7 @@ Every project should have a `README.md` with:
 ### Inline Comments
 
 **When to comment:**
+
 - Complex algorithms
 - Non-obvious business logic
 - Workarounds for bugs/limitations
@@ -606,6 +647,7 @@ Every project should have a `README.md` with:
 - Security considerations
 
 **When NOT to comment:**
+
 - Obvious code (`// increment counter`)
 - Code that should be self-documenting
 
@@ -693,6 +735,7 @@ async function fetchData(url) {
 ### HTTP Status Codes
 
 Use appropriate codes:
+
 - `200 OK`: Success
 - `201 Created`: Resource created
 - `204 No Content`: Success with no response body
@@ -713,6 +756,7 @@ Use appropriate codes:
 Before any commit, verify:
 
 ### Code Quality
+
 - [ ] Linter passes (no warnings)
 - [ ] Formatter applied
 - [ ] Type checker passes (if applicable)
@@ -720,11 +764,13 @@ Before any commit, verify:
 - [ ] No debug statements
 
 ### Testing
+
 - [ ] All tests pass
 - [ ] New tests written for new features
 - [ ] Test coverage maintained/improved
 
 ### Security
+
 - [ ] No hardcoded secrets
 - [ ] No sensitive data in logs
 - [ ] Dependencies have no known vulnerabilities
@@ -732,18 +778,21 @@ Before any commit, verify:
 - [ ] Authentication/authorization correct
 
 ### Documentation
+
 - [ ] Functions have docstrings
 - [ ] README updated (if needed)
 - [ ] API docs updated (if needed)
 - [ ] Comments added for complex logic
 
 ### Git
+
 - [ ] `.gitignore` configured properly
 - [ ] Commit message follows format
 - [ ] Changes are atomic (one logical change)
 - [ ] No unintended files staged
 
 ### TODO List
+
 - [ ] TODO list updated
 - [ ] Current task marked completed
 - [ ] New tasks added if discovered
@@ -755,35 +804,41 @@ Before any commit, verify:
 When starting work on a new project:
 
 ### Git Setup
+
 - [ ] Git repository initialized
 - [ ] `.gitignore` created with language-specific patterns
 - [ ] Remote repository configured (if applicable)
 - [ ] Initial commit made
 
 ### Development Environment
+
 - [ ] Language version specified (`.python-version`, `.nvmrc`, etc.)
 - [ ] Dependencies managed (`requirements.txt`, `package.json`, etc.)
 - [ ] Virtual environment created (Python, Node, etc.)
 - [ ] Environment variables documented (`.env.example`)
 
 ### Code Quality Tools
+
 - [ ] Linter configured
 - [ ] Formatter configured
 - [ ] Type checker configured (if applicable)
 - [ ] Pre-commit hooks set up (optional)
 
 ### Testing
+
 - [ ] Testing framework installed
 - [ ] Test directory structure created
 - [ ] Sample test written
 - [ ] Coverage tool configured
 
 ### Documentation
+
 - [ ] `README.md` created with sections outlined
 - [ ] License specified (if applicable)
 - [ ] Contributing guidelines (if open source)
 
 ### Security
+
 - [ ] Secrets management strategy defined
 - [ ] `.env` in `.gitignore`
 - [ ] Security scanning tool identified
@@ -795,6 +850,7 @@ When starting work on a new project:
 ### Python
 
 **Style:**
+
 - Follow PEP 8
 - Use type hints
 - Max line length: 88 (Black default) or 100
@@ -802,6 +858,7 @@ When starting work on a new project:
 - Prefer pathlib over os.path
 
 **Imports:**
+
 ```python
 # Standard library
 import os
@@ -817,6 +874,7 @@ from .utils import helper
 ```
 
 **Async:**
+
 ```python
 # Use async for I/O operations
 async def fetch_data(url: str) -> dict:
@@ -828,6 +886,7 @@ async def fetch_data(url: str) -> dict:
 ### JavaScript/TypeScript
 
 **Style:**
+
 - Use `const` by default, `let` when reassignment needed
 - Avoid `var`
 - Use template literals for strings
@@ -835,6 +894,7 @@ async def fetch_data(url: str) -> dict:
 - Destructure objects and arrays
 
 **Imports:**
+
 ```javascript
 // Prefer named imports
 import { useState, useEffect } from 'react';
@@ -847,6 +907,7 @@ import { helper } from './utils';
 ```
 
 **Async:**
+
 ```javascript
 // Use async/await
 async function fetchData(url) {
@@ -864,12 +925,14 @@ async function fetchData(url) {
 ### Go
 
 **Style:**
+
 - Use `gofmt` formatting
 - Error handling: return errors, don't panic
 - Use interfaces for abstraction
 - Prefer table-driven tests
 
 **Error Handling:**
+
 ```go
 func fetchData(url string) (*Data, error) {
     resp, err := http.Get(url)
@@ -886,12 +949,14 @@ func fetchData(url string) (*Data, error) {
 ### Rust
 
 **Style:**
+
 - Use `rustfmt` formatting
 - Use `Result` and `Option` types
 - Avoid `unwrap()` in production code
 - Use `?` operator for error propagation
 
 **Error Handling:**
+
 ```rust
 fn fetch_data(url: &str) -> Result<Data, Error> {
     let response = reqwest::blocking::get(url)?;
@@ -935,7 +1000,7 @@ fn fetch_data(url: &str) -> Result<Data, Error> {
 - N+1 query problem
 - Missing indexes on foreign keys
 - Not using transactions
-- SELECT * instead of specific columns
+- SELECT \* instead of specific columns
 - Not using connection pooling
 
 ---
@@ -979,23 +1044,27 @@ fn fetch_data(url: &str) -> Result<Data, Error> {
 ## 14. Resources by Language
 
 ### Python
+
 - [PEP 8 Style Guide](https://peps.python.org/pep-0008/)
 - [FastAPI Docs](https://fastapi.tiangolo.com/)
 - [Django Docs](https://docs.djangoproject.com/)
 - [pytest Docs](https://docs.pytest.org/)
 
 ### JavaScript/TypeScript
+
 - [Airbnb Style Guide](https://github.com/airbnb/javascript)
 - [React Docs](https://react.dev/)
 - [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 
 ### Go
+
 - [Effective Go](https://go.dev/doc/effective_go)
 - [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
 - [Go Testing](https://go.dev/doc/tutorial/add-a-test)
 
 ### Rust
+
 - [The Rust Book](https://doc.rust-lang.org/book/)
 - [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
 - [Rust by Example](https://doc.rust-lang.org/rust-by-example/)
@@ -1005,6 +1074,7 @@ fn fetch_data(url: &str) -> Result<Data, Error> {
 ## 15. Asking Questions
 
 When uncertain about:
+
 - Project requirements
 - Architecture decisions
 - Trade-offs between approaches
@@ -1032,9 +1102,11 @@ To use this in a project, reference it in your project-specific `CLAUDE.md`:
 # Project-Specific Instructions
 
 <!-- Include global standards -->
+
 See [CLAUDE_GLOBAL.md](./claude-code-standards/CLAUDE_GLOBAL.md) for universal coding standards.
 
 ## Project-Specific Guidelines
+
 [Your project-specific instructions here]
 ```
 

@@ -5,7 +5,14 @@ import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 
@@ -30,21 +37,20 @@ export default function ForgotPasswordPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-            <CardDescription>
-              Password reset instructions sent
-            </CardDescription>
+            <CardDescription>Password reset instructions sent</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
-                If an account exists with <strong>{email}</strong>, you will receive
-                a password reset link shortly. Please check your inbox and follow the
-                instructions to reset your password.
+                If an account exists with <strong>{email}</strong>, you will receive a password
+                reset link shortly. Please check your inbox and follow the instructions to reset
+                your password.
               </AlertDescription>
             </Alert>
             <p className="text-sm text-muted-foreground">
-              Didn't receive the email? Check your spam folder or try again with a different email address.
+              Didn't receive the email? Check your spam folder or try again with a different email
+              address.
             </p>
           </CardContent>
           <CardFooter className="flex flex-col space-y-3">
@@ -107,11 +113,7 @@ export default function ForgotPasswordPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={forgotPasswordMutation.isPending}
-            >
+            <Button type="submit" className="w-full" disabled={forgotPasswordMutation.isPending}>
               {forgotPasswordMutation.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}

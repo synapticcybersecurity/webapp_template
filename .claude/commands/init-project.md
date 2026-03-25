@@ -20,11 +20,13 @@ This command proactively and thoroughly sets up a complete development environme
 ### 1. Git Repository Setup
 
 Check if git exists:
+
 ```bash
 git rev-parse --git-dir 2>/dev/null
 ```
 
 If not initialized:
+
 - Ask user if they want to initialize git
 - If yes: `git init`
 - Create initial commit after setup
@@ -32,6 +34,7 @@ If not initialized:
 ### 2. Language/Framework Detection
 
 Auto-detect by checking for:
+
 - **Python**: `requirements.txt`, `pyproject.toml`, `setup.py`, `*.py` files
 - **JavaScript**: `package.json`, `*.js` files
 - **TypeScript**: `tsconfig.json`, `*.ts` files
@@ -44,6 +47,7 @@ Auto-detect by checking for:
 ### 3. Create .gitignore
 
 **Always include:**
+
 ```gitignore
 # Environment variables and secrets
 .env
@@ -67,6 +71,7 @@ Thumbs.db
 ```
 
 **Python-specific:**
+
 ```gitignore
 __pycache__/
 *.py[cod]
@@ -83,6 +88,7 @@ build/
 ```
 
 **JavaScript/TypeScript:**
+
 ```gitignore
 node_modules/
 .npm
@@ -95,6 +101,7 @@ coverage/
 ```
 
 **Go:**
+
 ```gitignore
 *.exe
 *.dll
@@ -105,6 +112,7 @@ vendor/
 ```
 
 **Rust:**
+
 ```gitignore
 target/
 Cargo.lock
@@ -114,12 +122,14 @@ Cargo.lock
 ### 4. Set Up Linting and Formatting
 
 #### Python
+
 - Check if `ruff` is available
 - Create `pyproject.toml` with ruff configuration
 - Set up `mypy` for type checking
 - Configure `black` for formatting
 
 **Example `pyproject.toml`:**
+
 ```toml
 [tool.ruff]
 line-length = 100
@@ -147,11 +157,13 @@ python_functions = ["test_*"]
 ```
 
 #### JavaScript/TypeScript
+
 - Check for `eslint` and `prettier`
 - Create `.prettierrc`
 - Add npm scripts for linting
 
 **Example `.prettierrc`:**
+
 ```json
 {
   "semi": true,
@@ -163,15 +175,18 @@ python_functions = ["test_*"]
 ```
 
 #### Go
+
 - `gofmt` is built-in, no config needed
 - Suggest `golangci-lint` for comprehensive linting
 
 #### Rust
+
 - `rustfmt` and `clippy` are standard, no additional setup
 
 ### 5. Set Up Testing Framework
 
 #### Python
+
 - Check if `pytest` is installed
 - Create `tests/` directory
 - Create sample test file `tests/test_example.py`
@@ -183,6 +198,7 @@ def test_example():
 ```
 
 #### JavaScript/TypeScript
+
 - Check if test framework exists (Jest, Vitest, Mocha)
 - Create `tests/` or `__tests__/` directory
 - Create sample test file
@@ -196,6 +212,7 @@ describe('Example', () => {
 ```
 
 #### Go
+
 - Create `*_test.go` files alongside source files
 
 ```go
@@ -212,6 +229,7 @@ func TestExample(t *testing.T) {
 ```
 
 #### Rust
+
 - Tests are built-in with `#[test]` attribute
 
 ```rust
@@ -236,30 +254,39 @@ Brief description of what this project does.
 ## Installation
 
 \`\`\`bash
+
 # Installation commands
+
 \`\`\`
 
 ## Usage
 
 \`\`\`bash
+
 # Usage examples
+
 \`\`\`
 
 ## Configuration
 
 Environment variables required:
+
 - `VAR_NAME`: Description
 
 ## Development
 
 \`\`\`bash
+
 # Setup development environment
+
 \`\`\`
 
 ## Testing
 
 \`\`\`bash
+
 # Run tests
+
 \`\`\`
 
 ## License
@@ -287,6 +314,7 @@ LOG_LEVEL=INFO
 ### 8. Standard Directory Structures
 
 #### Python projects:
+
 ```
 project/
 ├── src/
@@ -303,6 +331,7 @@ project/
 ```
 
 #### JavaScript/TypeScript projects:
+
 ```
 project/
 ├── src/
@@ -317,6 +346,7 @@ project/
 ```
 
 #### Go projects:
+
 ```
 project/
 ├── cmd/
@@ -331,6 +361,7 @@ project/
 ```
 
 #### Rust projects:
+
 ```
 project/
 ├── src/
@@ -347,24 +378,28 @@ project/
 Run basic checks to ensure everything is set up:
 
 **Python:**
+
 ```bash
 ruff check . --select I  # Just check imports to verify it works
 pytest --collect-only    # List tests without running
 ```
 
 **JavaScript/TypeScript:**
+
 ```bash
 npm run lint -- --help   # Verify lint command exists
 npm test -- --listTests  # List tests without running
 ```
 
 **Go:**
+
 ```bash
 go build ./...           # Check if code compiles
 go test ./... -run ^$    # Verify tests can be collected
 ```
 
 **Rust:**
+
 ```bash
 cargo check              # Check if code compiles
 cargo test --no-run      # Verify tests can be built
@@ -373,6 +408,7 @@ cargo test --no-run      # Verify tests can be built
 ### 10. Create Initial Commit
 
 If git was initialized:
+
 ```bash
 git add -A
 git commit -m "chore: Initial project setup
@@ -397,6 +433,7 @@ Provide a summary to the user:
 ## Project Initialization Complete ✓
 
 ### Completed Tasks
+
 - [x] Git repository initialized
 - [x] .gitignore created for [language]
 - [x] Linting configured ([tools])
@@ -407,6 +444,7 @@ Provide a summary to the user:
 - [x] Initial commit made
 
 ### Next Steps
+
 1. Review and customize README.md
 2. Fill in .env.example and copy to .env
 3. Install dependencies: [command]
@@ -414,6 +452,7 @@ Provide a summary to the user:
 5. Start development!
 
 ### Recommended Commands
+
 - Format code: [command]
 - Run linter: [command]
 - Run tests: [command]
@@ -423,15 +462,18 @@ Provide a summary to the user:
 ## Error Handling
 
 **If tools are not installed:**
+
 - Inform user what's missing
 - Provide installation commands
 - Ask if they want to proceed anyway
 
 **If directories already exist:**
+
 - Don't overwrite
 - Inform user and ask if they want to merge/skip
 
 **If git is already initialized:**
+
 - Skip git init
 - Check if .gitignore needs updating
 
@@ -446,6 +488,7 @@ Provide a summary to the user:
 ## Success Criteria
 
 Before completing, verify:
+
 - [ ] .gitignore exists and is comprehensive
 - [ ] README.md exists with basic structure
 - [ ] .env.example exists (if applicable)

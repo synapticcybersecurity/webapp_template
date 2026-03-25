@@ -13,12 +13,7 @@ import { ApiResponse, HttpStatus, ErrorCode } from '@webapp/shared';
 /**
  * Global error handler
  */
-export function errorHandler(
-  err: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function errorHandler(err: Error, req: Request, res: Response, _next: NextFunction): void {
   // Log the error
   logger.error('Error caught by error handler:', {
     error: err.message,
@@ -63,11 +58,14 @@ function handleAppError(err: AppError, res: Response): void {
  * Handle Zod validation errors
  */
 function handleZodError(err: ZodError, res: Response): void {
-  const details = err.errors.reduce((acc, error) => {
-    const path = error.path.join('.');
-    acc[path] = error.message;
-    return acc;
-  }, {} as Record<string, string>);
+  const details = err.errors.reduce(
+    (acc, error) => {
+      const path = error.path.join('.');
+      acc[path] = error.message;
+      return acc;
+    },
+    {} as Record<string, string>
+  );
 
   const response: ApiResponse = {
     success: false,
@@ -85,10 +83,7 @@ function handleZodError(err: ZodError, res: Response): void {
 /**
  * Handle Prisma database errors
  */
-function handlePrismaError(
-  err: PrismaClientKnownRequestError,
-  res: Response
-): void {
+function handlePrismaError(err: PrismaClientKnownRequestError, res: Response): void {
   let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
   let code = ErrorCode.DATABASE_ERROR;
   let message = 'Database error occurred';
@@ -155,9 +150,7 @@ function handleUnknownError(err: Error, res: Response): void {
     error: {
       code: ErrorCode.INTERNAL_ERROR,
       message:
-        process.env.NODE_ENV === 'development'
-          ? err.message
-          : 'An unexpected error occurred',
+        process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
       ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
     },
     timestamp: new Date().toISOString(),
@@ -169,11 +162,7 @@ function handleUnknownError(err: Error, res: Response): void {
 /**
  * 404 Not Found handler
  */
-export function notFoundHandler(
-  req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function notFoundHandler(req: Request, res: Response, _next: NextFunction): void {
   const response: ApiResponse = {
     success: false,
     error: {

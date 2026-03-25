@@ -44,9 +44,7 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">
             Welcome back, {user?.name || 'User'}!
           </h1>
-          <p className="text-muted-foreground">
-            Here's an overview of your account activity.
-          </p>
+          <p className="text-muted-foreground">Here's an overview of your account activity.</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

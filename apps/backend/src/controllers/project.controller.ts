@@ -69,11 +69,7 @@ export async function createProject(
 /**
  * List projects (user's personal + organization projects)
  */
-export async function listProjects(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function listProjects(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
@@ -87,7 +83,9 @@ export async function listProjects(
         where: { userId },
         select: { organizationId: true },
       })
-      .then((memberships: { organizationId: string }[]) => memberships.map((m: { organizationId: string }) => m.organizationId));
+      .then((memberships: { organizationId: string }[]) =>
+        memberships.map((m: { organizationId: string }) => m.organizationId)
+      );
 
     const where: any = {
       OR: [
@@ -150,11 +148,7 @@ export async function listProjects(
 /**
  * Get project by ID
  */
-export async function getProject(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function getProject(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
     const userId = req.user!.id;

@@ -22,6 +22,7 @@ This command performs a thorough but practical quality assessment by:
 ### 1. Language Detection
 
 Auto-detect by checking for:
+
 - **Python**: `requirements.txt`, `pyproject.toml`, `*.py` files
 - **JavaScript**: `package.json`, `*.js` files
 - **TypeScript**: `tsconfig.json`, `*.ts` files
@@ -35,6 +36,7 @@ Once detected, proceed with language-specific checks.
 ### Python Quality Checks
 
 #### Linting
+
 ```bash
 # Run ruff (preferred)
 ruff check . --output-format=json
@@ -44,6 +46,7 @@ flake8 . --max-line-length=100
 ```
 
 **Check for:**
+
 - Syntax errors
 - Unused imports and variables
 - Undefined names
@@ -52,35 +55,43 @@ flake8 . --max-line-length=100
 - Import sorting
 
 #### Type Checking
+
 ```bash
 mypy . --show-error-codes --pretty
 ```
 
 **Check for:**
+
 - Missing type hints
 - Type mismatches
 - Incorrect return types
 - Any types that should be specific
 
 #### Formatting
+
 ```bash
 black --check --diff .
 ```
 
 #### Code Complexity
+
 **Check for:**
+
 - Functions longer than 50 lines
 - Deep nesting (> 4 levels)
 - High cyclomatic complexity (> 10)
 - Too many parameters (> 5)
 
 **Use radon (if available):**
+
 ```bash
 radon cc . --min B --show-complexity
 ```
 
 #### Python-Specific Issues
+
 **Look for:**
+
 - Mutable default arguments: `def func(items=[])`
 - Bare except clauses: `except:`
 - Use of `eval()` or `exec()`
@@ -91,11 +102,13 @@ radon cc . --min B --show-complexity
 ### JavaScript/TypeScript Quality Checks
 
 #### Linting
+
 ```bash
 npx eslint . --format=json
 ```
 
 **Check for:**
+
 - Syntax errors
 - Unused variables
 - Missing semicolons (if configured)
@@ -104,23 +117,28 @@ npx eslint . --format=json
 - Debugger statements
 
 #### Type Checking (TypeScript)
+
 ```bash
 npx tsc --noEmit
 ```
 
 **Check for:**
+
 - Type errors
 - Missing type definitions
 - Implicit any types
 - Incorrect type assignments
 
 #### Formatting
+
 ```bash
 npx prettier --check .
 ```
 
 #### JavaScript-Specific Issues
+
 **Look for:**
+
 - Using `==` instead of `===`
 - Not handling promise rejections
 - Modifying function parameters
@@ -130,12 +148,15 @@ npx prettier --check .
 ### Go Quality Checks
 
 #### Formatting
+
 ```bash
 gofmt -l .
 ```
+
 Should return empty (all files formatted).
 
 #### Linting
+
 ```bash
 # Run golangci-lint (if available)
 golangci-lint run --out-format=json
@@ -145,6 +166,7 @@ go vet ./...
 ```
 
 **Check for:**
+
 - Unused variables
 - Unreachable code
 - Incorrect struct tags
@@ -152,7 +174,9 @@ go vet ./...
 - Shadow variables
 
 #### Go-Specific Issues
+
 **Look for:**
+
 - Not checking errors: `result, _ := function()`
 - Using panic in libraries (should return errors)
 - Not closing resources (defer missing)
@@ -161,23 +185,28 @@ go vet ./...
 ### Rust Quality Checks
 
 #### Formatting
+
 ```bash
 cargo fmt -- --check
 ```
 
 #### Linting
+
 ```bash
 cargo clippy -- -D warnings
 ```
 
 **Check for:**
+
 - Inefficient code patterns
 - Unnecessary clones
 - Incorrect error handling
 - Style violations
 
 #### Rust-Specific Issues
+
 **Look for:**
+
 - Use of `unwrap()` in production code
 - Not using `?` operator for error propagation
 - Unnecessary `clone()`
@@ -186,22 +215,26 @@ cargo clippy -- -D warnings
 ## Test Coverage Analysis
 
 ### Python
+
 ```bash
 pytest --cov=. --cov-report=json --cov-report=term
 ```
 
 **Parse coverage.json and report:**
+
 - Overall coverage percentage
 - Files with < 70% coverage
 - Uncovered lines of critical code
 
 **Critical code includes:**
+
 - Authentication/authorization logic
 - Payment processing
 - Data modification operations
 - API endpoints
 
 ### JavaScript/TypeScript
+
 ```bash
 # Jest
 npm test -- --coverage --json
@@ -211,29 +244,34 @@ npx vitest --coverage
 ```
 
 **Report:**
+
 - Statement coverage
 - Branch coverage
 - Function coverage
 - Files below threshold
 
 ### Go
+
 ```bash
 go test ./... -coverprofile=coverage.out
 go tool cover -func=coverage.out
 ```
 
 ### Rust
+
 ```bash
 # Using cargo-tarpaulin
 cargo tarpaulin --out Json
 ```
 
 ### Coverage Goals
+
 - **Minimum acceptable**: 70%
 - **Target**: 80%
 - **Critical code**: 100%
 
 **Flag:**
+
 - Decreasing coverage compared to baseline
 - Critical functions without tests
 - New code without tests
@@ -243,14 +281,17 @@ cargo tarpaulin --out Json
 ### Code Documentation
 
 #### Python - Check for docstrings
+
 All public functions, classes, and modules should have docstrings.
 
 **Use pydocstyle (if available):**
+
 ```bash
 pydocstyle .
 ```
 
 #### JavaScript/TypeScript - Check for JSDoc
+
 ```javascript
 /**
  * Function description
@@ -260,6 +301,7 @@ pydocstyle .
 ```
 
 **Check for:**
+
 - Missing docstrings/JSDoc on public functions
 - Undocumented parameters
 - Undocumented return values
@@ -268,6 +310,7 @@ pydocstyle .
 ### README.md Quality
 
 **Check README includes:**
+
 - [ ] Project title and description
 - [ ] Installation instructions
 - [ ] Usage examples
@@ -277,6 +320,7 @@ pydocstyle .
 - [ ] License information
 
 **Flag if missing:**
+
 - Critical sections (Installation, Usage)
 - Outdated information
 - Broken links
@@ -284,16 +328,19 @@ pydocstyle .
 ### API Documentation
 
 **For web APIs, check:**
+
 - Endpoint documentation exists
 - Request/response schemas documented
 - Authentication requirements documented
 - Error responses documented
 
 **Python (FastAPI):**
+
 - Check that endpoints have descriptions
 - Verify `/docs` endpoint works
 
 **JavaScript (Express):**
+
 - Check for Swagger/OpenAPI spec
 
 ## Code Smell Detection
@@ -301,28 +348,34 @@ pydocstyle .
 ### General Code Smells
 
 **Duplicated Code:**
+
 - Look for similar code blocks
 - Suggest extracting to functions
 - DRY principle violations
 
 **Long Functions:**
+
 - Functions > 50 lines
 - Suggest breaking into smaller functions
 - Single Responsibility Principle
 
 **Too Many Parameters:**
+
 - Functions with > 5 parameters
 - Suggest using config objects or classes
 
 **Magic Numbers:**
+
 - Hardcoded numbers without explanation
 - Suggest named constants
 
 **Commented-Out Code:**
+
 - Dead code that should be removed
 - Git tracks history
 
 **Debug Statements:**
+
 - `console.log` in JavaScript
 - `print()` in Python
 - `fmt.Println()` in Go
@@ -331,6 +384,7 @@ pydocstyle .
 ### Deep Nesting
 
 **Example of problematic nesting:**
+
 ```python
 def process_data(data):
     if data:
@@ -342,6 +396,7 @@ def process_data(data):
 ```
 
 **Suggest early returns:**
+
 ```python
 def process_data(data):
     if not data:
@@ -356,27 +411,32 @@ def process_data(data):
 ## Naming Conventions
 
 ### Python
+
 - Functions/variables: `snake_case`
 - Classes: `PascalCase`
 - Constants: `UPPER_SNAKE_CASE`
 - Private: `_leading_underscore`
 
 ### JavaScript/TypeScript
+
 - Functions/variables: `camelCase`
 - Classes: `PascalCase`
 - Constants: `UPPER_SNAKE_CASE`
 - Private: `#privateField` or `_convention`
 
 ### Go
+
 - Exported: `PascalCase`
 - Unexported: `camelCase`
 
 ### Rust
+
 - Functions/variables: `snake_case`
 - Types/traits: `PascalCase`
 - Constants: `UPPER_SNAKE_CASE`
 
 **Flag:**
+
 - Inconsistent naming
 - Single-letter variables (except loop counters)
 - Ambiguous names (`data`, `temp`, `x`)
@@ -385,7 +445,9 @@ def process_data(data):
 ## Import/Dependency Organization
 
 ### Python
+
 **Check import order:**
+
 ```python
 # Standard library
 import os
@@ -400,7 +462,9 @@ from .models import User
 ```
 
 ### JavaScript/TypeScript
+
 **Check import organization:**
+
 ```javascript
 // External libraries
 import React from 'react';
@@ -412,28 +476,36 @@ import Component from './Component';
 ```
 
 ### Unused Imports
+
 **Flag and suggest removing:**
+
 - Imports that are never used
 - Wildcard imports (`from module import *`)
 
 ## Performance Anti-Patterns
 
 ### Database Queries
+
 **Look for:**
+
 - N+1 query problems
-- SELECT * instead of specific columns
+- SELECT \* instead of specific columns
 - Missing indexes on foreign keys
 - Queries in loops
 
 ### API Calls
+
 **Look for:**
+
 - API calls in loops (should batch)
 - No timeout specified
 - No error handling
 - No caching for repeated calls
 
 ### Memory Issues
+
 **Look for:**
+
 - Loading large files into memory
 - Not closing file handles
 - Accumulating data in loops without limits
@@ -464,12 +536,15 @@ import Component from './Component';
 ## 1. Linting Issues
 
 ### High Priority (Errors)
+
 [Details]
 
 ### Medium Priority (Warnings)
+
 [Details]
 
 ### Low Priority (Style)
+
 [Details]
 
 ---
@@ -477,10 +552,12 @@ import Component from './Component';
 ## 2. Test Coverage
 
 **Overall Coverage**: [X]%
+
 - **Target**: 80%
 - **Status**: [✓ Pass / ✗ Fail]
 
 ### Low Coverage Files
+
 [Details]
 
 ---
@@ -488,6 +565,7 @@ import Component from './Component';
 ## 3. Code Complexity
 
 ### Functions Needing Refactoring
+
 [Details]
 
 ---
@@ -507,18 +585,22 @@ import Component from './Component';
 ## Action Items
 
 ### Critical (Fix Now)
+
 1. [ ] Item 1
 2. [ ] Item 2
 
 ### High Priority (Fix Soon)
+
 1. [ ] Item 1
 2. [ ] Item 2
 
 ### Medium Priority (Improvements)
+
 1. [ ] Item 1
 2. [ ] Item 2
 
 ### Low Priority (Nice to Have)
+
 1. [ ] Item 1
 2. [ ] Item 2
 ```
@@ -526,11 +608,13 @@ import Component from './Component';
 ## Auto-fixable Issues
 
 **Can be automatically fixed:**
+
 - Formatting (black, prettier, gofmt, rustfmt)
 - Import sorting (ruff, eslint)
 - Some linting issues (ruff --fix, eslint --fix)
 
 **Offer to fix:**
+
 ```
 Found X auto-fixable issues. Would you like me to fix them?
 - Run black to format code
@@ -549,6 +633,7 @@ Found X auto-fixable issues. Would you like me to fix them?
 ## Success Criteria
 
 Before completing:
+
 - [ ] Detected project language
 - [ ] Ran appropriate linter
 - [ ] Checked formatting

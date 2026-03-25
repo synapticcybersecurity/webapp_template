@@ -4,7 +4,14 @@ import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
@@ -50,21 +57,19 @@ export default function SignupPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Check your email</CardTitle>
-            <CardDescription>
-              We've sent you a verification link
-            </CardDescription>
+            <CardDescription>We've sent you a verification link</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
-                A verification email has been sent to <strong>{formData.email}</strong>.
-                Please check your inbox and click the link to verify your account.
+                A verification email has been sent to <strong>{formData.email}</strong>. Please
+                check your inbox and click the link to verify your account.
               </AlertDescription>
             </Alert>
             <p className="text-sm text-muted-foreground">
-              After verification, an administrator will review and approve your account.
-              You'll receive an email once approved.
+              After verification, an administrator will review and approve your account. You'll
+              receive an email once approved.
             </p>
             <p className="text-sm text-muted-foreground">
               Didn't receive the email? Check your spam folder or try signing up again.
@@ -85,9 +90,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
-            Enter your details to get started
-          </CardDescription>
+          <CardDescription>Enter your details to get started</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -140,19 +143,14 @@ export default function SignupPage() {
                 disabled={isPending}
               />
               <p className="text-xs text-muted-foreground">
-                Must contain at least 8 characters, including uppercase, lowercase, number, and special character
+                Must contain at least 8 characters, including uppercase, lowercase, number, and
+                special character
               </p>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isPending}
-            >
-              {isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create account
             </Button>
 

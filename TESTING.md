@@ -58,6 +58,7 @@ npm run test:ui
 ```
 
 This opens a browser interface at http://localhost:51204 where you can:
+
 - View test files and results
 - Filter and search tests
 - View test execution time
@@ -142,9 +143,7 @@ import { app } from '../../index.js';
 
 describe('GET /api/users/me', () => {
   it('should return current user', async () => {
-    const response = await request(app)
-      .get('/api/users/me')
-      .set('Cookie', 'session=test-session');
+    const response = await request(app).get('/api/users/me').set('Cookie', 'session=test-session');
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('data');
@@ -376,6 +375,7 @@ describe('Component/Function Name', () => {
 ### What to Test
 
 **DO test:**
+
 - ✅ Business logic and calculations
 - ✅ Error handling and edge cases
 - ✅ User interactions (clicks, form submissions)
@@ -385,6 +385,7 @@ describe('Component/Function Name', () => {
 - ✅ Authorization and permissions
 
 **DON'T test:**
+
 - ❌ Third-party library internals
 - ❌ Implementation details
 - ❌ Static content
