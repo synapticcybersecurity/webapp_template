@@ -98,7 +98,7 @@ jobs:
         run: npm run db:generate --workspace=apps/backend
 
       - name: Run database migrations
-        run: npx --workspace=apps/backend prisma migrate deploy
+        run: npx --workspace=apps/backend prisma migrate deploy --schema=src/prisma/schema.prisma
 
       - name: Run backend tests
         run: npm run test --workspace=apps/backend
