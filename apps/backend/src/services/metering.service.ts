@@ -6,7 +6,6 @@
  * Add custom metrics by recording with any string key.
  */
 
-import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import type { UsageMetric, UsageSummary } from '@webapp/shared';
 
@@ -24,7 +23,7 @@ export async function recordUsage(
       organizationId,
       metric,
       quantity,
-      metadata: (metadata as Prisma.JsonObject) ?? undefined,
+      metadata: (metadata as object) ?? undefined,
     },
   });
 }
@@ -45,7 +44,7 @@ export async function recordUsageBatch(
       organizationId: e.organizationId,
       metric: e.metric,
       quantity: e.quantity,
-      metadata: (e.metadata as Prisma.JsonObject) ?? undefined,
+      metadata: (e.metadata as object) ?? undefined,
     })),
   });
 }
@@ -95,14 +94,16 @@ export async function getUsageSummary(organizationId: string): Promise<UsageSumm
     _sum: { quantity: true },
   });
 
-  const metrics: UsageMetric[] = records.map((r) => ({
-    metric: r.metric,
-    total: r._sum.quantity ?? 0,
-    period: {
-      start: start.toISOString(),
-      end: end.toISOString(),
-    },
-  }));
+  const metrics: UsageMetric[] = records.map(
+    (r: { metric: string; _sum: { quantity: number | null } }) => ({
+      metric: r.metric,
+      total: r._sum.quantity ?? 0,
+      period: {
+        start: start.toISOString(),
+        end: end.toISOString(),
+      },
+    })
+  );
 
   return {
     organizationId,
