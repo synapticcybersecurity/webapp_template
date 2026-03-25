@@ -35,8 +35,8 @@ export default function OrganizationDetailsPage() {
   } = useQuery({
     queryKey: ['organization', id],
     queryFn: async () => {
-      const { data, error } = await authClient.organization.getFull({
-        query: { orgId: id! },
+      const { data, error } = await authClient.organization.getFullOrganization({
+        query: { organizationId: id! },
       });
       if (error) throw new Error(error.message);
       return data;
