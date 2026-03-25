@@ -85,11 +85,7 @@ export async function getPendingCount(
 /**
  * Approve a pending user registration
  */
-export async function approveUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function approveUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
 
@@ -121,6 +117,18 @@ export async function approveUser(
       },
     });
 
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'approve',
+        entityType: 'user',
+        entityId: id,
+        details: { approved: true },
+        ipAddress: req.ip,
+      },
+    });
+
     try {
       await sendAccountApprovedEmail(user.email, `${FRONTEND_URL}/login`);
     } catch (error) {
@@ -142,11 +150,7 @@ export async function approveUser(
 /**
  * Reject a pending user registration
  */
-export async function rejectUser(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function rejectUser(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
     const { reason } = req.body || {};
@@ -175,6 +179,18 @@ export async function rejectUser(
         name: true,
         banned: true,
         banReason: true,
+      },
+    });
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user!.id,
+        action: 'reject',
+        entityType: 'user',
+        entityId: id,
+        details: { rejected: true, reason: reason || null },
+        ipAddress: req.ip,
       },
     });
 
