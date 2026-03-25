@@ -33,4 +33,7 @@ router.post('/:orgId/checkout', requireAuth, billingController.createCheckout);
 // Create customer portal session
 router.post('/:orgId/portal', requireAuth, billingController.createPortal);
 
+// List invoices
+router.get('/:orgId/invoices', requireAuth, billingController.getInvoices);
+
 export default router;

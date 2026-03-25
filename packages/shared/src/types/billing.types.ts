@@ -72,3 +72,36 @@ export interface PlanUsage {
   members: { current: number; limit: number };
   projects: { current: number; limit: number };
 }
+
+// Usage metering types
+export interface UsageMetric {
+  metric: string;
+  total: number;
+  period: {
+    start: string; // ISO date
+    end: string;
+  };
+}
+
+export interface UsageSummary {
+  organizationId: string;
+  period: {
+    start: string;
+    end: string;
+  };
+  metrics: UsageMetric[];
+}
+
+export interface Invoice {
+  id: string;
+  number: string | null;
+  status: string | null;
+  amountDue: number;
+  amountPaid: number;
+  currency: string;
+  created: number; // unix timestamp
+  periodStart: number;
+  periodEnd: number;
+  hostedInvoiceUrl: string | null;
+  invoicePdf: string | null;
+}

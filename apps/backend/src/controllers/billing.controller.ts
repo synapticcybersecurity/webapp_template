@@ -134,6 +134,28 @@ export async function createPortal(req: Request, res: Response, next: NextFuncti
 }
 
 /**
+ * GET /api/billing/:orgId/invoices — List invoices for an organization
+ */
+export async function getInvoices(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const orgId = requireOrgId(req);
+    await verifyOrgAdmin(req.user!.id, orgId);
+
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
+    const invoices = await billingService.listInvoices(orgId, limit);
+
+    const response: ApiResponse = {
+      success: true,
+      data: invoices,
+      timestamp: new Date().toISOString(),
+    };
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * POST /api/billing/webhook — Handle Stripe webhook events
  * Note: This route must receive raw body (not JSON-parsed)
  */

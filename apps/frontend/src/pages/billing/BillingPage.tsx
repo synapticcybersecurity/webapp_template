@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-import { billingAPI } from '@/lib/api';
+import { billingAPI, meteringAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +14,12 @@ import {
   CheckCircle2,
   Users,
   FolderKanban,
+  Receipt,
+  Download,
+  ExternalLink,
+  Activity,
 } from 'lucide-react';
-import type { BillingOverview, BillingInterval } from '@webapp/shared';
+import type { BillingOverview, BillingInterval, Invoice, UsageSummary } from '@webapp/shared';
 
 function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(0)}`;
@@ -60,6 +64,24 @@ export default function BillingPage() {
     queryFn: async () => {
       const res = await billingAPI.getBillingOverview(orgId!);
       return res.data.data as BillingOverview;
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: invoices } = useQuery({
+    queryKey: ['billing', orgId, 'invoices'],
+    queryFn: async () => {
+      const res = await billingAPI.getInvoices(orgId!);
+      return res.data.data as Invoice[];
+    },
+    enabled: !!orgId,
+  });
+
+  const { data: usageSummary } = useQuery({
+    queryKey: ['metering', orgId],
+    queryFn: async () => {
+      const res = await meteringAPI.getUsageSummary(orgId!);
+      return res.data.data as UsageSummary;
     },
     enabled: !!orgId,
   });
@@ -228,6 +250,34 @@ export default function BillingPage() {
           </Card>
         )}
 
+        {/* Metered usage */}
+        {usageSummary && usageSummary.metrics.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                <CardTitle>Metered Usage</CardTitle>
+              </div>
+              <CardDescription>
+                Current billing period: {formatDate(usageSummary.period.start)} —{' '}
+                {formatDate(usageSummary.period.end)}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                {usageSummary.metrics.map((m) => (
+                  <div key={m.metric} className="rounded-lg border p-4 space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground capitalize">
+                      {m.metric.replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-2xl font-bold">{m.total.toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Plan features */}
         {plan && (
           <Card>
@@ -246,9 +296,88 @@ export default function BillingPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Invoice History */}
+        {invoices && invoices.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" />
+                <CardTitle>Billing History</CardTitle>
+              </div>
+              <CardDescription>Recent invoices and payments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {invoices.map((invoice) => (
+                  <div
+                    key={invoice.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{invoice.number || invoice.id}</span>
+                        <InvoiceStatusBadge status={invoice.status} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(invoice.created * 1000).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">
+                        {formatPrice(invoice.amountPaid || invoice.amountDue)}
+                      </span>
+                      <div className="flex gap-1">
+                        {invoice.hostedInvoiceUrl && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a
+                              href={invoice.hostedInvoiceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                        {invoice.invoicePdf && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={invoice.invoicePdf} target="_blank" rel="noopener noreferrer">
+                              <Download className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );
+}
+
+function InvoiceStatusBadge({ status }: { status: string | null }) {
+  switch (status) {
+    case 'paid':
+      return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
+    case 'open':
+      return <Badge className="bg-blue-100 text-blue-800">Open</Badge>;
+    case 'draft':
+      return <Badge variant="outline">Draft</Badge>;
+    case 'void':
+      return <Badge variant="secondary">Void</Badge>;
+    case 'uncollectible':
+      return <Badge variant="destructive">Uncollectible</Badge>;
+    default:
+      return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+  }
 }
 
 function UsageBar({

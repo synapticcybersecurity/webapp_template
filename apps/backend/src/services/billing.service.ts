@@ -9,7 +9,7 @@ import { stripe, PLANS, STRIPE_WEBHOOK_SECRET } from '../config/stripe.js';
 import { logger } from '../utils/logger.js';
 import { BadRequestError, NotFoundError, AppError } from '../utils/errors.js';
 import { HttpStatus, ErrorCode } from '@webapp/shared';
-import type { BillingPlan, BillingInterval, PlanUsage } from '@webapp/shared';
+import type { BillingPlan, BillingInterval, PlanUsage, Invoice } from '@webapp/shared';
 
 function requireStripe(): Stripe {
   if (!stripe) {
@@ -174,6 +174,41 @@ export async function getPlanUsage(organizationId: string): Promise<PlanUsage> {
     members: { current: memberCount, limit: limits.members },
     projects: { current: projectCount, limit: limits.projects },
   };
+}
+
+/**
+ * List invoices for an organization's Stripe customer
+ */
+export async function listInvoices(organizationId: string, limit = 10): Promise<Invoice[]> {
+  const s = requireStripe();
+
+  const subscription = await prisma.subscription.findUnique({
+    where: { organizationId },
+    select: { stripeCustomerId: true },
+  });
+
+  if (!subscription) {
+    return [];
+  }
+
+  const invoices = await s.invoices.list({
+    customer: subscription.stripeCustomerId,
+    limit,
+  });
+
+  return invoices.data.map((inv) => ({
+    id: inv.id,
+    number: inv.number,
+    status: inv.status,
+    amountDue: inv.amount_due,
+    amountPaid: inv.amount_paid,
+    currency: inv.currency,
+    created: inv.created,
+    periodStart: inv.period_start,
+    periodEnd: inv.period_end,
+    hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+    invoicePdf: inv.invoice_pdf ?? null,
+  }));
 }
 
 /**
