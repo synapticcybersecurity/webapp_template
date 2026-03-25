@@ -137,5 +137,11 @@ jobs:
 
       - run: npm ci
 
+      - name: Build shared package
+        run: npm run build --workspace=packages/shared
+
+      - name: Generate Prisma client
+        run: npm run db:generate --workspace=apps/backend
+
       - name: Build all packages
         run: npm run build
