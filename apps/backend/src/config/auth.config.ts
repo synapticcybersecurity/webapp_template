@@ -20,11 +20,22 @@ const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || '';
 const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3001';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const SESSION_COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE === 'true';
-const SESSION_COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE || 'lax') as 'lax' | 'strict' | 'none';
+const SESSION_COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE || 'lax') as
+  | 'lax'
+  | 'strict'
+  | 'none';
 const SESSION_EXPIRY_DAYS = parseInt(process.env.SESSION_EXPIRY_DAYS || '7');
 
 if (!BETTER_AUTH_SECRET || BETTER_AUTH_SECRET.length < 32) {
   logger.error('BETTER_AUTH_SECRET must be set and at least 32 characters long');
+  process.exit(1);
+}
+
+// Enforce secure cookies in production
+if (process.env.NODE_ENV === 'production' && !SESSION_COOKIE_SECURE) {
+  logger.error(
+    'SESSION_COOKIE_SECURE must be "true" in production to prevent cookie interception over HTTP'
+  );
   process.exit(1);
 }
 
@@ -48,8 +59,7 @@ export const auth = betterAuth({
     requireEmailVerification: true,
 
     // Send password reset email
-    sendResetPassword: async (data: any) => {
-      const { user, url } = data;
+    sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
       logger.info(`Sending password reset email to ${user.email}`);
       await sendPasswordResetEmail(user.email, url);
     },
@@ -58,8 +68,15 @@ export const auth = betterAuth({
   // Email verification
   emailVerification: {
     sendOnSignUp: true,
-    sendVerificationEmail: async (data: any) => {
-      const { user, url, token } = data;
+    sendVerificationEmail: async ({
+      user,
+      url,
+      token,
+    }: {
+      user: { email: string };
+      url: string;
+      token: string;
+    }) => {
       logger.info(`Sending verification email to ${user.email}`);
       await sendVerificationEmail(user.email, url, token);
     },
@@ -121,11 +138,7 @@ export const auth = betterAuth({
             });
 
             for (const admin of admins) {
-              await sendPendingApprovalEmail(
-                admin.email,
-                user.name || 'Unknown',
-                user.email
-              );
+              await sendPendingApprovalEmail(admin.email, user.name || 'Unknown', user.email);
             }
           } catch (error) {
             logger.error('Failed to send pending approval notification emails:', error);
@@ -140,7 +153,7 @@ export const auth = betterAuth({
     // Admin plugin for user management
     admin({
       defaultRole: 'user',
-      impersonationSessionDuration: 60 * 60, // 1 hour
+      impersonationSessionDuration: 60 * 15, // 15 minutes
     }),
 
     // Organization plugin for multi-tenant support

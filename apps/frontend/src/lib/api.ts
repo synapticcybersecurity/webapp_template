@@ -18,9 +18,27 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor
+// CSRF token cache
+let csrfToken: string | null = null;
+
+async function fetchCsrfToken(): Promise<string> {
+  const response = await axios.get(`${API_URL}/api/csrf-token`, {
+    withCredentials: true,
+  });
+  csrfToken = response.data.csrfToken;
+  return csrfToken!;
+}
+
+// Request interceptor — attach CSRF token to state-changing requests
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    const method = config.method?.toUpperCase();
+    if (method && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+      if (!csrfToken) {
+        await fetchCsrfToken();
+      }
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
     return config;
   },
   (error) => {
@@ -28,15 +46,24 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor — handle auth errors and CSRF token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
       if (currentPath !== '/login' && currentPath !== '/signup') {
         window.location.href = '/login';
       }
+    }
+
+    // Refresh CSRF token and retry on CSRF validation failure
+    if (error.response?.status === 403 && error.response?.data?.code === 'EBADCSRFTOKEN') {
+      csrfToken = null;
+      await fetchCsrfToken();
+      const originalRequest = error.config;
+      originalRequest.headers['X-CSRF-Token'] = csrfToken;
+      return api(originalRequest);
     }
 
     return Promise.reject(error);
@@ -58,6 +85,12 @@ export const billingAPI = {
   createCheckout: (orgId: string, data: { plan: string; interval: string }) =>
     api.post(`/api/billing/${orgId}/checkout`, data),
   createPortal: (orgId: string) => api.post(`/api/billing/${orgId}/portal`),
+  getInvoices: (orgId: string, limit?: number) =>
+    api.get(`/api/billing/${orgId}/invoices`, { params: { limit } }),
+};
+
+export const meteringAPI = {
+  getUsageSummary: (orgId: string) => api.get(`/api/metering/${orgId}`),
 };
 
 export const projectAPI = {

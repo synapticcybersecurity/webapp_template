@@ -6,6 +6,18 @@
 import { ServerClient } from 'postmark';
 import { logger } from '../utils/logger.js';
 
+/**
+ * Escape user-controlled strings before embedding in HTML email templates
+ */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const POSTMARK_API_KEY = process.env.POSTMARK_API_KEY || '';
 const FROM_EMAIL = process.env.POSTMARK_FROM_EMAIL || 'noreply@example.com';
 const FROM_NAME = process.env.POSTMARK_FROM_NAME || 'Your App';
@@ -13,9 +25,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const EMAIL_TEST_MODE = process.env.EMAIL_TEST_MODE === 'true';
 
 // Initialize Postmark client
-const postmarkClient = EMAIL_TEST_MODE
-  ? null
-  : new ServerClient(POSTMARK_API_KEY);
+const postmarkClient = EMAIL_TEST_MODE ? null : new ServerClient(POSTMARK_API_KEY);
 
 /**
  * Send verification email to new users
@@ -75,10 +85,7 @@ If you didn't create an account, you can safely ignore this email.
 /**
  * Send password reset email
  */
-export async function sendPasswordResetEmail(
-  email: string,
-  resetUrl: string
-): Promise<void> {
+export async function sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
   const subject = 'Reset your password';
   const htmlBody = `
     <!DOCTYPE html>
@@ -136,7 +143,7 @@ export async function sendOrganizationInvitationEmail(
   role: string,
   invitationUrl: string
 ): Promise<void> {
-  const subject = `You've been invited to join ${organizationName}`;
+  const subject = `You've been invited to join ${escapeHtml(organizationName)}`;
   const htmlBody = `
     <!DOCTYPE html>
     <html>
@@ -152,7 +159,7 @@ export async function sendOrganizationInvitationEmail(
       <body>
         <div class="container">
           <h1>Organization Invitation</h1>
-          <p><strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> as a <span class="role-badge">${role}</span>.</p>
+          <p><strong>${escapeHtml(inviterName)}</strong> has invited you to join <strong>${escapeHtml(organizationName)}</strong> as a <span class="role-badge">${escapeHtml(role)}</span>.</p>
           <p style="margin: 30px 0;">
             <a href="${invitationUrl}" class="button">Accept Invitation</a>
           </p>
@@ -193,7 +200,7 @@ export async function sendPendingApprovalEmail(
   userName: string,
   userEmail: string
 ): Promise<void> {
-  const subject = `New registration pending approval: ${userEmail}`;
+  const subject = `New registration pending approval: ${escapeHtml(userEmail)}`;
   const adminUrl = `${FRONTEND_URL}/admin/users?tab=pending`;
   const htmlBody = `
     <!DOCTYPE html>
@@ -211,8 +218,8 @@ export async function sendPendingApprovalEmail(
           <h1>New Registration Pending Approval</h1>
           <p>A new user has registered and is waiting for admin approval:</p>
           <ul>
-            <li><strong>Name:</strong> ${userName}</li>
-            <li><strong>Email:</strong> ${userEmail}</li>
+            <li><strong>Name:</strong> ${escapeHtml(userName)}</li>
+            <li><strong>Email:</strong> ${escapeHtml(userEmail)}</li>
           </ul>
           <p style="margin: 30px 0;">
             <a href="${adminUrl}" class="button">Review Pending Approvals</a>
@@ -244,10 +251,7 @@ Review pending approvals: ${adminUrl}
 /**
  * Send email to user notifying them their account has been approved
  */
-export async function sendAccountApprovedEmail(
-  email: string,
-  loginUrl: string
-): Promise<void> {
+export async function sendAccountApprovedEmail(email: string, loginUrl: string): Promise<void> {
   const subject = 'Your account has been approved';
   const htmlBody = `
     <!DOCTYPE html>
@@ -291,17 +295,10 @@ Sign in: ${loginUrl}
 /**
  * Send email to user notifying them their registration was rejected
  */
-export async function sendAccountRejectedEmail(
-  email: string,
-  reason?: string
-): Promise<void> {
+export async function sendAccountRejectedEmail(email: string, reason?: string): Promise<void> {
   const subject = 'Your registration was not approved';
-  const reasonText = reason
-    ? `<p><strong>Reason:</strong> ${reason}</p>`
-    : '';
-  const reasonPlain = reason
-    ? `\nReason: ${reason}\n`
-    : '';
+  const reasonText = reason ? `<p><strong>Reason:</strong> ${escapeHtml(reason)}</p>` : '';
+  const reasonPlain = reason ? `\nReason: ${reason}\n` : '';
 
   const htmlBody = `
     <!DOCTYPE html>

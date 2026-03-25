@@ -51,7 +51,9 @@ export default function AdminUsersPage() {
   const activeTab = searchParams.get('tab') || 'all';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [actionDialog, setActionDialog] = useState<'ban' | 'unban' | 'role' | 'reject' | null>(null);
+  const [actionDialog, setActionDialog] = useState<'ban' | 'unban' | 'role' | 'reject' | null>(
+    null
+  );
   const [rejectReason, setRejectReason] = useState('');
   const queryClient = useQueryClient();
 
@@ -60,7 +62,11 @@ export default function AdminUsersPage() {
   };
 
   // Use better-auth admin API for user listing
-  const { data: usersResponse, isLoading, error } = useQuery({
+  const {
+    data: usersResponse,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['admin', 'users'],
     queryFn: async () => {
       const { data, error } = await authClient.admin.listUsers({
@@ -119,7 +125,7 @@ export default function AdminUsersPage() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { error } = await authClient.admin.setRole({ userId, role });
+      const { error } = await authClient.admin.setRole({ userId, role: role as 'user' | 'admin' });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -151,9 +157,10 @@ export default function AdminUsersPage() {
     },
   });
 
-  const filteredUsers = users.filter((user: User) =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (user: User) =>
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleBanUser = () => {
@@ -204,9 +211,7 @@ export default function AdminUsersPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground">
-            Manage user accounts, roles, and permissions
-          </p>
+          <p className="text-muted-foreground">Manage user accounts, roles, and permissions</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
@@ -229,9 +234,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>All Users</CardTitle>
-                    <CardDescription>
-                      {users.length || 0} registered users
-                    </CardDescription>
+                    <CardDescription>{users.length || 0} registered users</CardDescription>
                   </div>
                   <div className="relative w-64">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -507,7 +510,10 @@ export default function AdminUsersPage() {
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {selectedUser?.role === 'admin' ? 'remove admin privileges from' : 'make'} {selectedUser?.email} {selectedUser?.role === 'admin' ? 'a regular user' : 'an admin'}?
+              Are you sure you want to{' '}
+              {selectedUser?.role === 'admin' ? 'remove admin privileges from' : 'make'}{' '}
+              {selectedUser?.email} {selectedUser?.role === 'admin' ? 'a regular user' : 'an admin'}
+              ?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

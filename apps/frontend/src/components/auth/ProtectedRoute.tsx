@@ -30,6 +30,10 @@ export function ProtectedRoute({
     return <Navigate to={redirectTo} replace />;
   }
 
+  if (user?.banned) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (requireAdmin && user?.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
