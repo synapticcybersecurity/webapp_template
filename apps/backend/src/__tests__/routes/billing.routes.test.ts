@@ -6,6 +6,8 @@ const mockPrisma = vi.hoisted(() => ({
   organization: { findUnique: vi.fn() },
   organizationMember: { findUnique: vi.fn(), count: vi.fn() },
   project: { count: vi.fn() },
+  user: { findUnique: vi.fn() },
+  session: { deleteMany: vi.fn() },
 }));
 
 // Mock all heavy dependencies before importing the app
@@ -52,6 +54,14 @@ vi.mock('../../utils/logger.js', () => ({
 
 vi.mock('better-auth/node', () => ({
   toNodeHandler: () => (_req: any, _res: any, next: any) => next(),
+  fromNodeHeaders: (headers: any) => headers,
+}));
+
+vi.mock('csrf-csrf', () => ({
+  doubleCsrf: () => ({
+    doubleCsrfProtection: (_req: any, _res: any, next: any) => next(),
+    generateCsrfToken: () => 'test-csrf-token',
+  }),
 }));
 
 import supertest from 'supertest';

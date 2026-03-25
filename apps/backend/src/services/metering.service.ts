@@ -6,7 +6,7 @@
  * Add custom metrics by recording with any string key.
  */
 
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../config/database.js';
 import type { UsageMetric, UsageSummary } from '@webapp/shared';
 
@@ -24,7 +24,7 @@ export async function recordUsage(
       organizationId,
       metric,
       quantity,
-      metadata: (metadata as Prisma.InputJsonValue) ?? undefined,
+      metadata: (metadata as Prisma.JsonObject) ?? undefined,
     },
   });
 }
@@ -45,7 +45,7 @@ export async function recordUsageBatch(
       organizationId: e.organizationId,
       metric: e.metric,
       quantity: e.quantity,
-      metadata: (e.metadata as Prisma.InputJsonValue) ?? undefined,
+      metadata: (e.metadata as Prisma.JsonObject) ?? undefined,
     })),
   });
 }
