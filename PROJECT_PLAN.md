@@ -79,7 +79,7 @@ The template has a solid foundation: authentication, organizations, user managem
 
 ### Milestone 5: Payments & Billing
 
-> _Status: In Progress_
+> _Completed_
 
 Integrate Stripe for subscription billing, the most critical missing piece for a SaaS kit.
 
@@ -88,11 +88,11 @@ Integrate Stripe for subscription billing, the most critical missing piece for a
 - [x] Pricing page with plan comparison and interval toggle
 - [x] Checkout flow (Stripe Checkout)
 - [x] Customer portal for managing subscriptions
-- [ ] Billing history and invoice display
-- [ ] Usage-based metering support (optional/pluggable)
+- [x] Billing history and invoice display
+- [x] Usage-based metering support (optional/pluggable)
 - [x] Plan-based feature gating (middleware + frontend guards)
 - [x] Webhook handling for subscription lifecycle events
-- [x] Prisma schema updates (subscriptions)
+- [x] Prisma schema updates (subscriptions, usage records)
 - [x] Seed data for test plans and prices
 - [x] Billing management page with usage bars
 - [x] Organization billing link in org details
@@ -190,4 +190,4 @@ The template is "complete" when a developer can:
 
 ---
 
-_Last updated: 2026-03-06_
+_Last updated: 2026-03-17_
