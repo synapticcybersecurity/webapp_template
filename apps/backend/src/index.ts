@@ -4,6 +4,7 @@
  */
 
 import app from './app.js';
+import { connectRedis } from './config/redis.js';
 import { logger } from './utils/logger.js';
 
 const PORT = process.env.PORT || 3001;
@@ -12,13 +13,23 @@ const PORT = process.env.PORT || 3001;
 // Start Server
 // =============================================================================
 
-app.listen(PORT, () => {
-  logger.info(`🚀 Server started successfully`);
-  logger.info(`📍 Port: ${PORT}`);
-  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info(`🔗 API URL: http://localhost:${PORT}`);
-  logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
-  logger.info(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth/*`);
+async function start() {
+  // Connect to Redis (optional — degrades gracefully if unavailable)
+  await connectRedis();
+
+  app.listen(PORT, () => {
+    logger.info(`Server started successfully`);
+    logger.info(`Port: ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`API URL: http://localhost:${PORT}`);
+    logger.info(`Health check: http://localhost:${PORT}/health`);
+    logger.info(`Auth endpoints: http://localhost:${PORT}/api/auth/*`);
+  });
+}
+
+start().catch((err) => {
+  logger.error('Failed to start server:', err);
+  process.exit(1);
 });
 
 // Handle unhandled promise rejections

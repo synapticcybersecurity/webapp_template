@@ -27,13 +27,17 @@ process.on('beforeExit', async () => {
 });
 
 process.on('SIGINT', async () => {
-  logger.info('SIGINT received: Disconnecting from database...');
+  logger.info('SIGINT received: shutting down...');
+  const { disconnectRedis } = await import('./redis.js');
+  await disconnectRedis();
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received: Disconnecting from database...');
+  logger.info('SIGTERM received: shutting down...');
+  const { disconnectRedis } = await import('./redis.js');
+  await disconnectRedis();
   await prisma.$disconnect();
   process.exit(0);
 });

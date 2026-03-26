@@ -64,6 +64,11 @@ vi.mock('csrf-csrf', () => ({
   }),
 }));
 
+vi.mock('../../config/redis.js', () => ({
+  getRedisClient: () => null,
+  isRedisConnected: () => false,
+}));
+
 import supertest from 'supertest';
 import app from '../../app.js';
 import { auth } from '../../config/auth.config.js';

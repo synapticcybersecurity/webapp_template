@@ -8,6 +8,7 @@ vi.mock('../../config/auth.config.js', () => ({
 vi.mock('../../config/database.js', () => ({
   prisma: {
     $disconnect: vi.fn(),
+    $queryRaw: vi.fn().mockResolvedValue([{ 1: 1 }]),
     subscription: { findUnique: vi.fn() },
     organization: { findUnique: vi.fn() },
     organizationMember: { findUnique: vi.fn(), count: vi.fn() },
@@ -28,6 +29,19 @@ vi.mock('../../utils/logger.js', () => ({
 
 vi.mock('better-auth/node', () => ({
   toNodeHandler: () => (_req: any, _res: any, next: any) => next(),
+  fromNodeHeaders: (headers: any) => headers,
+}));
+
+vi.mock('../../config/redis.js', () => ({
+  getRedisClient: () => null,
+  isRedisConnected: () => false,
+}));
+
+vi.mock('csrf-csrf', () => ({
+  doubleCsrf: () => ({
+    doubleCsrfProtection: (_req: any, _res: any, next: any) => next(),
+    generateCsrfToken: () => 'test-csrf-token',
+  }),
 }));
 
 import supertest from 'supertest';
@@ -45,6 +59,9 @@ describe('Health Routes', () => {
         status: 'ok',
         timestamp: expect.any(String),
         uptime: expect.any(Number),
+        checks: expect.objectContaining({
+          database: 'ok',
+        }),
       })
     );
   });

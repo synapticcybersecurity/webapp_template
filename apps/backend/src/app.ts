@@ -9,12 +9,15 @@ import crypto from 'crypto';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
 import timeout from 'connect-timeout';
 import cookieParser from 'cookie-parser';
 import { doubleCsrf } from 'csrf-csrf';
 import dotenv from 'dotenv';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './config/auth.config.js';
+import { prisma } from './config/database.js';
+import { getRedisClient, isRedisConnected } from './config/redis.js';
 import { logger, requestLogger } from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
 import userRoutes from './routes/user.routes.js';
@@ -104,7 +107,8 @@ app.use(
 // Cookie parser — required for CSRF double-submit cookie pattern
 app.use(cookieParser());
 
-// Rate limiting for API routes
+// Rate limiting for API routes (uses Redis if available, falls back to in-memory)
+const redisClient = getRedisClient();
 const apiLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
@@ -118,6 +122,13 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  ...(redisClient
+    ? {
+        store: new RedisStore({
+          sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+        }),
+      }
+    : {}),
 });
 
 app.use('/api/', apiLimiter);
@@ -183,12 +194,38 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 // Health Check Endpoint
 // =============================================================================
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    status: 'ok',
+app.get('/health', async (_req: Request, res: Response) => {
+  const checks: Record<string, string> = {};
+
+  // Check database connectivity
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = 'ok';
+  } catch {
+    checks.database = 'error';
+  }
+
+  // Check Redis connectivity
+  const redis = getRedisClient();
+  if (redis && isRedisConnected()) {
+    try {
+      await redis.ping();
+      checks.redis = 'ok';
+    } catch {
+      checks.redis = 'error';
+    }
+  } else {
+    checks.redis = 'not configured';
+  }
+
+  const allOk = Object.values(checks).every((v) => v === 'ok' || v === 'not configured');
+
+  res.status(allOk ? 200 : 503).json({
+    status: allOk ? 'ok' : 'degraded',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
+    checks,
   });
 });
 
