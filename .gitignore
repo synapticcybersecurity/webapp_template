@@ -40,6 +40,9 @@ ehthumbs.db
 Thumbs.db
 *~
 
+# Claude Code local settings (may contain project-specific env vars)
+.claude/settings.local.json
+
 # IDEs and editors
 .vscode/
 .idea/
