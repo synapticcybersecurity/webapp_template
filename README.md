@@ -18,7 +18,7 @@ A production-ready, full-stack web application template built with modern techno
   - Role-based permissions (Owner, Admin, Member)
 
 - **User Management**
-  - User profiles with avatar support
+  - User profiles
   - Admin dashboard for user management
   - Ban/unban users with expiration
   - Role management
@@ -64,7 +64,7 @@ A production-ready, full-stack web application template built with modern techno
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - Docker and Docker Compose
 - npm 10+
 

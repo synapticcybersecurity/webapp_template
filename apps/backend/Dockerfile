@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1: Install production dependencies
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN npm ci --omit=dev --ignore-scripts \
 # ---------------------------------------------------------------------------
 # Stage 2: Build
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -53,7 +53,7 @@ RUN npm run build --workspace=apps/backend
 # ---------------------------------------------------------------------------
 # Stage 3: Production image
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
