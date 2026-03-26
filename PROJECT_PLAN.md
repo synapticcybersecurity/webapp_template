@@ -69,9 +69,9 @@ Provide a batteries-included SaaS template that handles the undifferentiated hea
 
 The template has a solid foundation: authentication, organizations, user management, Docker infrastructure, and basic tests. The next phase focuses on making it a complete SaaS starter kit with billing, deeper test coverage, polished UX, and deployment guides.
 
-**Test coverage:** 3 test files (minimal — needs significant expansion)
-**Pages:** 10 (login, signup, forgot/reset password, verify email, dashboard, profile, admin users, org list, org details)
-**API routes:** Auth, Users, Organizations, Projects (stub)
+**Test coverage:** 8 backend + 5 frontend test files
+**Pages:** 12 (login, signup, forgot/reset password, verify email, dashboard, profile, admin users, org list, org details, billing, pricing)
+**API routes:** Auth, Users, Organizations, Projects, Billing, Metering
 
 ---
 
@@ -108,7 +108,7 @@ Increase confidence in the codebase and establish CI/CD.
 - [ ] Frontend component tests: auth forms, dashboard, org pages
 - [ ] Frontend hook tests: useAuth, custom hooks
 - [ ] E2E tests with Playwright (critical flows: signup, login, create org, billing)
-- [ ] CI/CD pipeline (GitHub Actions: lint, type-check, test, build)
+- [x] CI/CD pipeline (GitHub Actions: lint, type-check, test, build)
 - [ ] Test database seeding for integration tests
 - [ ] API contract tests (shared Zod schemas as source of truth)
 - [ ] Coverage reporting and thresholds
@@ -183,11 +183,11 @@ The template is "complete" when a developer can:
 ## Technical Debt & Known Issues
 
 - [ ] Project routes (`project.routes.ts`, `project.controller.ts`) are stubs — decide if this stays as an example or gets removed
-- [ ] Only 3 test files exist — far below target coverage
+- [ ] Test coverage expanding — 13 test files, targeting 80%+
 - [ ] OAuth providers commented out — needs UI and documentation
 - [ ] No input validation on some frontend forms
-- [ ] No API rate limiting beyond basic middleware
+- [x] No API rate limiting beyond basic middleware
 
 ---
 
-_Last updated: 2026-03-17_
+_Last updated: 2026-03-25_

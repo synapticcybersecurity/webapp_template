@@ -6,7 +6,7 @@ This document describes the security measures, configuration, and practices for 
 
 ### Authentication
 
-- **Library**: [better-auth](https://www.better-auth.com/) v1.5.5
+- **Library**: [better-auth](https://www.better-auth.com/) v1.5.6
 - **Password hashing**: bcrypt (handled internally by better-auth)
 - **Sessions**: Database-backed with configurable expiry (default 7 days)
 - **Email verification**: Required on signup
@@ -72,6 +72,12 @@ Configured via [Helmet.js](https://helmetjs.github.io/):
 - Webhook signatures verified via `stripe.webhooks.constructEvent()`
 - Raw body preserved for webhook routes (skips JSON parsing)
 - All Stripe keys from environment variables
+
+### Audit Logging
+
+- Admin actions (approve, reject) are logged to the `audit_logs` table
+- Each entry records: acting user, action, target entity, details (JSON), and IP address
+- Logs survive user deletion (`onDelete: SetNull`)
 
 ## Environment Variables
 

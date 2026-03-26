@@ -106,9 +106,9 @@ Example middleware test with mocks:
 ```typescript
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
-import { requireRole } from '../../middleware/auth.middleware.js';
+import { requireAdmin } from '../../middleware/auth.middleware.js';
 
-describe('requireRole Middleware', () => {
+describe('requireAdmin Middleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let nextFunction: NextFunction;
@@ -121,11 +121,10 @@ describe('requireRole Middleware', () => {
     nextFunction = vi.fn();
   });
 
-  it('should allow user with correct role', () => {
+  it('should allow user with admin role', () => {
     mockRequest.user!.role = 'admin';
-    const middleware = requireRole('admin');
 
-    middleware(mockRequest as Request, mockResponse as Response, nextFunction);
+    requireAdmin(mockRequest as Request, mockResponse as Response, nextFunction);
 
     expect(nextFunction).toHaveBeenCalledWith();
   });
@@ -456,31 +455,9 @@ debug(); // Prints DOM to console
 Tests should run automatically on CI/CD:
 
 ```yaml
-# .github/workflows/test.yml
-name: Tests
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm test
-
-      - name: Generate coverage
-        run: npm run test:coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
+# See .github/workflows/ci.yml for the full pipeline
+# Key steps: lint, format check, typecheck, test (backend + frontend + shared), build
+# Runs on: Node.js 22, actions/checkout@v6, actions/setup-node@v6
 ```
 
 ## Common Issues

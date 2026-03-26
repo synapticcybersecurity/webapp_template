@@ -175,7 +175,7 @@ Look for: "database system is ready to accept connections"
 
 ```bash
 cd apps/backend
-npm run prisma:generate
+npm run db:generate
 ```
 
 This generates the TypeScript types for database access.
@@ -183,7 +183,7 @@ This generates the TypeScript types for database access.
 ### 4.2 Run Database Migrations
 
 ```bash
-npm run prisma:migrate dev
+npm run db:migrate
 ```
 
 **What this does:**
@@ -202,7 +202,7 @@ npm run prisma:migrate dev
 ### 4.3 Seed the Database
 
 ```bash
-npm run prisma:seed
+npm run db:seed
 ```
 
 **What this creates:**
@@ -346,7 +346,7 @@ Prisma Studio is a visual database browser:
 
 ```bash
 cd apps/backend
-npm run prisma:studio
+npm run db:studio
 ```
 
 Opens at: **http://localhost:5555**
@@ -409,8 +409,8 @@ npm run docker:up
 
 # Re-run migrations
 cd apps/backend
-npm run prisma:migrate dev
-npm run prisma:seed
+npm run db:migrate
+npm run db:seed
 ```
 
 ### Database Connection Error
@@ -432,7 +432,7 @@ npm run prisma:seed
 
 ```bash
 cd apps/backend
-npm run prisma:generate
+npm run db:generate
 ```
 
 ### Frontend Build Errors
@@ -545,10 +545,10 @@ cd apps/backend && npm run build   # Build only backend
 
 ```bash
 cd apps/backend
-npm run prisma:generate  # Generate Prisma Client
-npm run prisma:migrate dev  # Create and apply migration
-npm run prisma:studio    # Open Prisma Studio GUI
-npm run prisma:format    # Format schema file
+npm run db:generate      # Generate Prisma Client
+npm run db:migrate       # Create and apply migration (dev)
+npm run db:migrate:prod  # Apply migration (production)
+npm run db:studio        # Open Prisma Studio GUI
 ```
 
 ## Getting Help

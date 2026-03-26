@@ -35,6 +35,9 @@
   - User management (profile, admin functions)
   - Organization CRUD with member/invitation management
   - Example project/task domain
+  - Billing routes (plans, checkout, portal, invoices, webhooks)
+  - Metering routes (usage tracking and summaries)
+  - User approval routes (pending list, approve, reject)
 - Database seed script with test data
   - Admin: admin@example.com / Admin123!
   - User1: user1@example.com / User123!
@@ -67,14 +70,18 @@
 - Organization management:
   - OrganizationListPage
   - OrganizationDetailsPage
+- Billing & pricing:
+  - BillingPage
+  - PricingPage
 
 ### Phase 5: Testing & Code Quality
 
 - ESLint configuration (root + workspace-level)
 - Prettier configuration
-- Vitest configured for backend (Node environment) and frontend (jsdom)
-- Example tests: auth middleware, error utilities, Button component
+- Vitest 2.x configured for backend (Node environment) and frontend (jsdom)
+- 8 backend test files, 5 frontend test files
 - Test setup files with proper mocking
+- CI/CD pipeline with GitHub Actions (lint, typecheck, test, build)
 
 ### Phase 6: Docker & Deployment
 
@@ -84,6 +91,27 @@
 - Redis production configuration (maxmemory, eviction policy)
 - Full-stack docker-compose.yml (app services + infrastructure)
 - docker-compose.dev.yml for development overrides
+- CI/CD pipeline (GitHub Actions) with Node.js 22
+
+### Phase 7: Security Hardening
+
+- CSRF double-submit cookie protection
+- Helmet CSP with Stripe-aware directives
+- Ban enforcement in requireAuth middleware (DB-level check, session revocation, ban expiry)
+- HTML escaping in email templates
+- Secure cookie enforcement in production
+- CORS wildcard rejection
+- Request timeout and correlation IDs
+- Audit logging for admin actions
+
+### Phase 8: Billing & Metering
+
+- Stripe subscription billing (Free, Pro, Enterprise plans)
+- Checkout and customer portal
+- Invoice history
+- Usage-based metering service
+- Plan-based feature gating middleware
+- Webhook handling for subscription lifecycle
 
 ## Project Structure
 
@@ -157,12 +185,11 @@ After running seed script:
 
 ### Testing
 
-- Additional backend unit tests (controllers, routes)
-- Frontend component and integration tests
-- End-to-end test examples
+- End-to-end test examples (Playwright)
 
 ### Polish
 
 - Setup script (scripts/setup.js) for new project initialization
-- Security audit
-- Performance optimization review
+- OAuth provider wiring (GitHub, Google) and UI
+- Dark mode / theme toggle
+- Onboarding flow for new users

@@ -9,6 +9,7 @@ A production-ready, full-stack web application template built with modern techno
   - Password reset flow with Better Auth built-in endpoints
   - Session-based auth with secure cookies
   - Role-based access control (User, Admin)
+  - Admin approval workflow — new users auto-banned pending approval
   - OAuth providers ready (GitHub, Google) — uncomment to enable
 
 - **Multi-Tenant Organizations**
@@ -21,6 +22,7 @@ A production-ready, full-stack web application template built with modern techno
   - Admin dashboard for user management
   - Ban/unban users with expiration
   - Role management
+  - Audit logging for admin actions (approve, reject, ban, unban)
 
 - **Subscription Billing**
   - Stripe integration for subscription payments
@@ -51,7 +53,7 @@ A production-ready, full-stack web application template built with modern techno
 | Layer              | Technology                                                                                 |
 | ------------------ | ------------------------------------------------------------------------------------------ |
 | **Frontend**       | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, React Router, TanStack Query, Zustand |
-| **Backend**        | Node.js 20, Express, TypeScript, Prisma, Better Auth, Winston, Zod                         |
+| **Backend**        | Node.js 22, Express, TypeScript, Prisma, Better Auth 1.5.6, Winston, Zod                   |
 | **Database**       | PostgreSQL 16                                                                              |
 | **Cache**          | Redis 7                                                                                    |
 | **Email**          | Postmark                                                                                   |
@@ -70,7 +72,7 @@ A production-ready, full-stack web application template built with modern techno
 
 ```bash
 # 1. Clone and install
-git clone <your-repo-url>
+git clone https://github.com/synapticcybersecurity/webapp_template.git
 cd webapp_template
 npm install
 
@@ -214,14 +216,14 @@ webapp_template/
 
 ### Users
 
-| Method | Path                   | Description                 |
-| ------ | ---------------------- | --------------------------- |
-| GET    | `/api/users/me`        | Get current user profile    |
-| PATCH  | `/api/users/me`        | Update current user profile |
-| GET    | `/api/users`           | List all users (admin)      |
-| POST   | `/api/users/:id/ban`   | Ban user (admin)            |
-| POST   | `/api/users/:id/unban` | Unban user (admin)          |
-| PATCH  | `/api/users/:id/role`  | Update user role (admin)    |
+| Method | Path                       | Description                    |
+| ------ | -------------------------- | ------------------------------ |
+| GET    | `/api/users/pending`       | List pending approvals (admin) |
+| GET    | `/api/users/pending/count` | Get pending count (admin)      |
+| POST   | `/api/users/:id/approve`   | Approve user (admin)           |
+| POST   | `/api/users/:id/reject`    | Reject user (admin)            |
+
+> **Note:** General user management (list users, ban/unban, role changes) is done through Better Auth admin client APIs, not custom endpoints.
 
 ### Billing
 
@@ -231,7 +233,14 @@ webapp_template/
 | GET    | `/api/billing/:orgId`          | Get billing overview for org          |
 | POST   | `/api/billing/:orgId/checkout` | Create Stripe Checkout session        |
 | POST   | `/api/billing/:orgId/portal`   | Create Stripe Customer Portal session |
+| GET    | `/api/billing/:orgId/invoices` | List invoices                         |
 | POST   | `/api/billing/webhook`         | Handle Stripe webhook events          |
+
+### Metering
+
+| Method | Path                   | Description       |
+| ------ | ---------------------- | ----------------- |
+| GET    | `/api/metering/:orgId` | Get usage summary |
 
 ### Organizations
 
@@ -248,11 +257,12 @@ webapp_template/
 
 ## Authentication Flow
 
-1. **Sign Up** — User registers with email/password. Verification email sent automatically. User clicks link to verify.
-2. **Sign In** — User enters credentials. Session created with secure HTTP-only cookie.
-3. **Password Reset** — User requests reset email via `/forgot-password`. Clicks link to `/reset-password?token=xxx`. Submits new password.
-4. **Email Verification** — User clicks verification link from email. Redirected to `/verify-email?token=xxx` for automatic verification.
-5. **Protected Routes** — Frontend checks auth status. Unauthenticated users redirected to login. Admin routes check for admin role.
+1. **Sign Up** — User registers with email/password. Verification email sent automatically. User is created as banned (pending_approval) and cannot access the app until approved.
+2. **Email Verification** — User clicks verification link from email. Redirected to `/verify-email?token=xxx` for automatic verification.
+3. **Admin Approval** — Admin approves the user from the pending approvals list. Until approved, the user cannot sign in.
+4. **Sign In** — Once approved, user enters credentials. Session created with secure HTTP-only cookie.
+5. **Password Reset** — User requests reset email via `/forgot-password`. Clicks link to `/reset-password?token=xxx`. Submits new password.
+6. **Protected Routes** — Frontend checks auth status. Unauthenticated users redirected to login. Banned (unapproved) users redirected to login. Admin routes check for admin role.
 
 ## Docker Architecture
 
@@ -343,7 +353,7 @@ See `.env.example` files for all available variables.
 
 1. Create controller in `apps/backend/src/controllers/`
 2. Create route file in `apps/backend/src/routes/`
-3. Register route in `apps/backend/src/index.ts`
+3. Register route in `apps/backend/src/app.ts`
 
 ### Enabling OAuth Providers
 
@@ -362,7 +372,7 @@ npx shadcn-ui@latest add [component-name]
 
 - Passwords hashed with bcrypt
 - Secure HTTP-only session cookies
-- CSRF protection via Better Auth
+- CSRF protection via double-submit cookie pattern (csrf-csrf)
 - Rate limiting on API and auth endpoints
 - Input validation with Zod schemas
 - SQL injection prevention via Prisma
