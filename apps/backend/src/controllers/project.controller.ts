@@ -5,8 +5,14 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database.js';
-import { NotFoundError, ForbiddenError } from '../utils/errors.js';
-import { ApiResponse, PaginatedResponse } from '@webapp/shared';
+import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors.js';
+import {
+  ApiResponse,
+  PaginatedResponse,
+  createProjectSchema,
+  updateProjectSchema,
+  listProjectsQuerySchema,
+} from '@webapp/shared';
 
 /**
  * Create project
@@ -17,7 +23,11 @@ export async function createProject(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { name, description, organizationId } = req.body;
+    const parsed = createProjectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.errors[0]?.message ?? 'Invalid input');
+    }
+    const { name, description, organizationId } = parsed.data;
     const userId = req.user!.id;
 
     // If organizationId provided, verify membership
@@ -72,10 +82,9 @@ export async function createProject(
 export async function listProjects(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const userId = req.user!.id;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const query = listProjectsQuerySchema.parse(req.query);
+    const { page, limit, organizationId } = query;
     const skip = (page - 1) * limit;
-    const organizationId = req.query.organizationId as string;
 
     // Get user's organizations
     const userOrgIds = await prisma.organizationMember
@@ -87,7 +96,7 @@ export async function listProjects(req: Request, res: Response, next: NextFuncti
         memberships.map((m: { organizationId: string }) => m.organizationId)
       );
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       OR: [
         { createdBy: userId, organizationId: null }, // Personal projects
         { organizationId: { in: userOrgIds } }, // Organization projects
@@ -124,7 +133,7 @@ export async function listProjects(req: Request, res: Response, next: NextFuncti
       prisma.project.count({ where }),
     ]);
 
-    const response: ApiResponse<PaginatedResponse<any>> = {
+    const response: ApiResponse<PaginatedResponse<unknown>> = {
       success: true,
       data: {
         items: projects,
@@ -218,7 +227,11 @@ export async function updateProject(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const parsed = updateProjectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new BadRequestError(parsed.error.errors[0]?.message ?? 'Invalid input');
+    }
+    const { name, description } = parsed.data;
     const userId = req.user!.id;
 
     const project = await prisma.project.findUnique({
