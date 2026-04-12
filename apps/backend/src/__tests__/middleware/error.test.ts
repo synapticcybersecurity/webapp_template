@@ -26,7 +26,7 @@ describe('Error Middleware', () => {
             code: 'INVALID_INPUT',
             message: 'Invalid input',
           }),
-        })
+        }),
       );
     });
 
@@ -47,7 +47,7 @@ describe('Error Middleware', () => {
           error: expect.objectContaining({
             details: { field: 'email' },
           }),
-        })
+        }),
       );
     });
 
@@ -79,7 +79,7 @@ describe('Error Middleware', () => {
             message: 'Validation failed',
             details: { password: 'Password must be at least 8 characters' },
           }),
-        })
+        }),
       );
     });
 
@@ -105,7 +105,7 @@ describe('Error Middleware', () => {
           error: expect.objectContaining({
             details: { 'user.email': 'Required' },
           }),
-        })
+        }),
       );
     });
 
@@ -146,7 +146,7 @@ describe('Error Middleware', () => {
           error: expect.objectContaining({
             code: 'INTERNAL_ERROR',
           }),
-        })
+        }),
       );
     });
 
@@ -217,7 +217,7 @@ describe('Error Middleware', () => {
             code: 'NOT_FOUND',
             message: expect.stringContaining('/api/nonexistent'),
           }),
-        })
+        }),
       );
     });
   });

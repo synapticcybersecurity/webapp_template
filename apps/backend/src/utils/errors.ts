@@ -16,7 +16,7 @@ export class AppError extends Error {
     statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR,
     code: string = ErrorCode.INTERNAL_ERROR,
     isOperational: boolean = true,
-    details?: Record<string, any>
+    details?: Record<string, any>,
   ) {
     super(message);
     Object.setPrototypeOf(this, new.target.prototype);

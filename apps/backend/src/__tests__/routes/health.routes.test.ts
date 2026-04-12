@@ -62,7 +62,7 @@ describe('Health Routes', () => {
         checks: expect.objectContaining({
           database: 'ok',
         }),
-      })
+      }),
     );
   });
 
@@ -75,7 +75,7 @@ describe('Health Routes', () => {
         name: 'Webapp Template API',
         version: '1.0.0',
         status: 'running',
-      })
+      }),
     );
   });
 });

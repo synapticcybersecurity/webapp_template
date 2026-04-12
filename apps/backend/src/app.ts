@@ -91,7 +91,7 @@ app.use(
         frameAncestors: ["'none'"],
       },
     },
-  })
+  }),
 );
 
 // CORS - Cross-Origin Resource Sharing
@@ -101,7 +101,7 @@ app.use(
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-CSRF-Token'],
-  })
+  }),
 );
 
 // Cookie parser — required for CSRF double-submit cookie pattern

@@ -64,7 +64,7 @@ function handleZodError(err: ZodError, res: Response): void {
       acc[path] = error.message;
       return acc;
     },
-    {} as Record<string, string>
+    {} as Record<string, string>,
   );
 
   const response: ApiResponse = {

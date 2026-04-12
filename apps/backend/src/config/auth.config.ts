@@ -34,7 +34,7 @@ if (!BETTER_AUTH_SECRET || BETTER_AUTH_SECRET.length < 32) {
 // Enforce secure cookies in production
 if (process.env.NODE_ENV === 'production' && !SESSION_COOKIE_SECURE) {
   logger.error(
-    'SESSION_COOKIE_SECURE must be "true" in production to prevent cookie interception over HTTP'
+    'SESSION_COOKIE_SECURE must be "true" in production to prevent cookie interception over HTTP',
   );
   process.exit(1);
 }
@@ -170,7 +170,7 @@ export const auth = betterAuth({
           data.organization.name,
           inviter?.name || inviter?.email || 'Someone',
           data.role,
-          invitationUrl
+          invitationUrl,
         );
       },
 

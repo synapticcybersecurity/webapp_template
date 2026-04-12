@@ -16,7 +16,7 @@ export async function recordUsage(
   organizationId: string,
   metric: string,
   quantity: number,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   await prisma.usageRecord.create({
     data: {
@@ -37,7 +37,7 @@ export async function recordUsageBatch(
     metric: string;
     quantity: number;
     metadata?: Record<string, unknown>;
-  }>
+  }>,
 ): Promise<void> {
   await prisma.usageRecord.createMany({
     data: events.map((e) => ({
@@ -56,7 +56,7 @@ export async function getMetricUsage(
   organizationId: string,
   metric: string,
   start: Date,
-  end: Date
+  end: Date,
 ): Promise<number> {
   const result = await prisma.usageRecord.aggregate({
     where: {
@@ -102,7 +102,7 @@ export async function getUsageSummary(organizationId: string): Promise<UsageSumm
         start: start.toISOString(),
         end: end.toISOString(),
       },
-    })
+    }),
   );
 
   return {

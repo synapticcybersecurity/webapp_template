@@ -180,7 +180,7 @@ export default function BillingPage() {
                   ? formatPrice(
                       plan.pricing[
                         (subscription?.billingInterval as 'monthly' | 'yearly') || 'monthly'
-                      ]
+                      ],
                     )
                   : '$0'}
               </span>

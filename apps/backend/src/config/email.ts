@@ -33,7 +33,7 @@ const postmarkClient = EMAIL_TEST_MODE ? null : new ServerClient(POSTMARK_API_KE
 export async function sendVerificationEmail(
   email: string,
   verificationUrl: string,
-  _token: string
+  _token: string,
 ): Promise<void> {
   const subject = 'Verify your email address';
   const htmlBody = `
@@ -141,7 +141,7 @@ export async function sendOrganizationInvitationEmail(
   organizationName: string,
   inviterName: string,
   role: string,
-  invitationUrl: string
+  invitationUrl: string,
 ): Promise<void> {
   const subject = `You've been invited to join ${escapeHtml(organizationName)}`;
   const htmlBody = `
@@ -198,7 +198,7 @@ If you don't want to accept this invitation, you can safely ignore this email.
 export async function sendPendingApprovalEmail(
   adminEmail: string,
   userName: string,
-  userEmail: string
+  userEmail: string,
 ): Promise<void> {
   const subject = `New registration pending approval: ${escapeHtml(userEmail)}`;
   const adminUrl = `${FRONTEND_URL}/admin/users?tab=pending`;
@@ -344,7 +344,7 @@ async function sendEmail(
   to: string,
   subject: string,
   htmlBody: string,
-  textBody: string
+  textBody: string,
 ): Promise<void> {
   if (EMAIL_TEST_MODE) {
     logger.info('EMAIL TEST MODE - Email would be sent:', {

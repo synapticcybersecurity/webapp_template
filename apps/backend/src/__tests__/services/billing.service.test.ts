@@ -136,7 +136,7 @@ describe('Billing Service', () => {
         'pro',
         'monthly',
         'https://app.com/success',
-        'https://app.com/cancel'
+        'https://app.com/cancel',
       );
 
       expect(result).toBe('https://checkout.stripe.com/session');
@@ -153,7 +153,7 @@ describe('Billing Service', () => {
 
     it('should throw BadRequestError for invalid plan', async () => {
       await expect(
-        createCheckoutSession('org-1', 'invalid' as any, 'monthly', '', '')
+        createCheckoutSession('org-1', 'invalid' as any, 'monthly', '', ''),
       ).rejects.toThrow('Invalid plan');
     });
 
@@ -163,7 +163,7 @@ describe('Billing Service', () => {
       });
       // Free plan has null price IDs
       await expect(
-        createCheckoutSession('org-1', 'free' as any, 'monthly', '', '')
+        createCheckoutSession('org-1', 'free' as any, 'monthly', '', ''),
       ).rejects.toThrow('No monthly price configured');
     });
 
@@ -174,7 +174,7 @@ describe('Billing Service', () => {
       mockStripe.checkout.sessions.create.mockResolvedValue({ url: null });
 
       await expect(createCheckoutSession('org-1', 'pro', 'monthly', '', '')).rejects.toThrow(
-        'Failed to create checkout session'
+        'Failed to create checkout session',
       );
     });
 
@@ -191,7 +191,7 @@ describe('Billing Service', () => {
       expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(
         expect.objectContaining({
           line_items: [{ price: 'price_pro_yearly', quantity: 1 }],
-        })
+        }),
       );
     });
   });
@@ -220,7 +220,7 @@ describe('Billing Service', () => {
       mockPrisma.subscription.findUnique.mockResolvedValue(null);
 
       await expect(createPortalSession('org-1', 'https://app.com/billing')).rejects.toThrow(
-        'No billing account found'
+        'No billing account found',
       );
     });
   });
@@ -328,7 +328,7 @@ describe('Billing Service', () => {
       });
 
       await expect(handleWebhookEvent(Buffer.from('{}'), 'invalid-sig')).rejects.toThrow(
-        'Invalid webhook signature'
+        'Invalid webhook signature',
       );
     });
 
@@ -533,7 +533,7 @@ describe('Billing Service', () => {
       expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { stripeCustomerId: 'cus_2' },
-        })
+        }),
       );
     });
 
@@ -556,7 +556,7 @@ describe('Billing Service', () => {
       expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ plan: 'pro' }),
-        })
+        }),
       );
     });
   });
@@ -598,7 +598,7 @@ describe('Billing Service', () => {
       expect(mockPrisma.subscription.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { stripeCustomerId: 'cus_2' },
-        })
+        }),
       );
     });
   });

@@ -14,7 +14,7 @@ interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
 
 export function renderWithProviders(
   ui: React.ReactElement,
-  options: RenderWithProvidersOptions = {}
+  options: RenderWithProvidersOptions = {},
 ) {
   const { routerProps, ...renderOptions } = options;
 

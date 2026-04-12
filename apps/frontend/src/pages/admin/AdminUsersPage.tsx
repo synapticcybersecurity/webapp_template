@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionDialog, setActionDialog] = useState<'ban' | 'unban' | 'role' | 'reject' | null>(
-    null
+    null,
   );
   const [rejectReason, setRejectReason] = useState('');
   const queryClient = useQueryClient();
@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
   const filteredUsers = users.filter(
     (user: User) =>
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleBanUser = () => {

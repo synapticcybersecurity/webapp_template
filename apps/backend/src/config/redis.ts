@@ -33,7 +33,7 @@ export function isRedisConnected(): boolean {
 export async function connectRedis(): Promise<void> {
   if (!REDIS_URL) {
     logger.info(
-      'REDIS_URL not configured — running without Redis (rate limiting uses in-memory store)'
+      'REDIS_URL not configured — running without Redis (rate limiting uses in-memory store)',
     );
     return;
   }

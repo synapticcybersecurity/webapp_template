@@ -46,7 +46,7 @@ describe('Billing Middleware', () => {
         expect.objectContaining({
           statusCode: 403,
           message: expect.stringContaining('projects'),
-        })
+        }),
       );
     });
 

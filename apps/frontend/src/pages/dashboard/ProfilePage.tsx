@@ -70,7 +70,7 @@ function ChangePasswordCard() {
     if (changeError) {
       setError(
         changeError.message ||
-          'Failed to change password. Please check your current password and try again.'
+          'Failed to change password. Please check your current password and try again.',
       );
     } else {
       setIsSuccess(true);

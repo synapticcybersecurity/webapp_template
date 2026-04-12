@@ -43,7 +43,7 @@ async function verifyOrgAdmin(userId: string, orgId: string): Promise<void> {
 export async function getUsageSummary(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const orgId = requireOrgId(req);

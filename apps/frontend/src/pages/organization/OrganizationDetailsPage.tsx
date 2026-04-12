@@ -104,7 +104,7 @@ export default function OrganizationDetailsPage() {
 
   const members = organization.members || [];
   const currentUserMember = members.find(
-    (m: { userId: string; role: string }) => m.userId === user?.id
+    (m: { userId: string; role: string }) => m.userId === user?.id,
   );
   const isOwnerOrAdmin = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
 
@@ -213,7 +213,7 @@ export default function OrganizationDetailsPage() {
                           </Button>
                         )}
                       </div>
-                    )
+                    ),
                   )}
                 </div>
               </CardContent>

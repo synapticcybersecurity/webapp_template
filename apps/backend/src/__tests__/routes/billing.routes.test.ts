@@ -90,7 +90,7 @@ describe('Billing Routes', () => {
         expect.arrayContaining([
           expect.objectContaining({ id: 'free' }),
           expect.objectContaining({ id: 'pro' }),
-        ])
+        ]),
       );
     });
   });

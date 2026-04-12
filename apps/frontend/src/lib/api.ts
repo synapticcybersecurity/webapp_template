@@ -43,7 +43,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor — handle auth errors and CSRF token refresh
@@ -67,7 +67,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 // Custom API endpoints not covered by better-auth

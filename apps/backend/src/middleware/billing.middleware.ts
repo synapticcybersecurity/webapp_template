@@ -25,7 +25,7 @@ export function requirePlanLimit(resource: 'members' | 'projects') {
         throw new AppError(
           `You have reached the ${resource} limit for your current plan. Please upgrade to add more.`,
           HttpStatus.FORBIDDEN,
-          ErrorCode.PLAN_LIMIT_EXCEEDED
+          ErrorCode.PLAN_LIMIT_EXCEEDED,
         );
       }
 

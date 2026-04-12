@@ -25,7 +25,7 @@ const DEFAULT_MOCK_USER: MockUser = {
 };
 
 export function createMockRequest(
-  overrides: Partial<Request> & { user?: Partial<MockUser> } = {}
+  overrides: Partial<Request> & { user?: Partial<MockUser> } = {},
 ): Request {
   const { user, ...rest } = overrides;
   return {

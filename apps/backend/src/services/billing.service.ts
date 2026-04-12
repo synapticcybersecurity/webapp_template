@@ -16,7 +16,7 @@ function requireStripe(): Stripe {
     throw new AppError(
       'Stripe is not configured. Set STRIPE_SECRET_KEY to enable billing.',
       HttpStatus.SERVICE_UNAVAILABLE,
-      ErrorCode.BILLING_ERROR
+      ErrorCode.BILLING_ERROR,
     );
   }
   return stripe;
@@ -74,7 +74,7 @@ export async function createCheckoutSession(
   plan: BillingPlan,
   interval: BillingInterval,
   successUrl: string,
-  cancelUrl: string
+  cancelUrl: string,
 ): Promise<string> {
   const s = requireStripe();
 
@@ -106,7 +106,7 @@ export async function createCheckoutSession(
     throw new AppError(
       'Failed to create checkout session',
       HttpStatus.INTERNAL_SERVER_ERROR,
-      ErrorCode.STRIPE_ERROR
+      ErrorCode.STRIPE_ERROR,
     );
   }
 
@@ -118,7 +118,7 @@ export async function createCheckoutSession(
  */
 export async function createPortalSession(
   organizationId: string,
-  returnUrl: string
+  returnUrl: string,
 ): Promise<string> {
   const s = requireStripe();
 
@@ -216,7 +216,7 @@ export async function listInvoices(organizationId: string, limit = 10): Promise<
  */
 export async function checkPlanLimit(
   organizationId: string,
-  resource: 'members' | 'projects'
+  resource: 'members' | 'projects',
 ): Promise<boolean> {
   const usage = await getPlanUsage(organizationId);
   const { current, limit } = usage[resource];

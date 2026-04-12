@@ -58,7 +58,7 @@ describe('Billing Controller', () => {
             expect.objectContaining({ id: 'free' }),
             expect.objectContaining({ id: 'pro' }),
           ]),
-        })
+        }),
       );
     });
   });
@@ -94,7 +94,7 @@ describe('Billing Controller', () => {
             plan: expect.any(Object),
             usage: expect.any(Object),
           }),
-        })
+        }),
       );
     });
 
@@ -115,7 +115,7 @@ describe('Billing Controller', () => {
       expect(next).toHaveBeenCalledWith(
         expect.objectContaining({
           statusCode: 403,
-        })
+        }),
       );
     });
 
@@ -134,7 +134,7 @@ describe('Billing Controller', () => {
       expect(next).toHaveBeenCalledWith(
         expect.objectContaining({
           statusCode: 403,
-        })
+        }),
       );
     });
   });
@@ -153,7 +153,7 @@ describe('Billing Controller', () => {
         role: 'owner',
       });
       (billingService.createCheckoutSession as any).mockResolvedValue(
-        'https://checkout.stripe.com/session'
+        'https://checkout.stripe.com/session',
       );
 
       await createCheckout(req, res, next);
@@ -162,7 +162,7 @@ describe('Billing Controller', () => {
         expect.objectContaining({
           success: true,
           data: { url: 'https://checkout.stripe.com/session' },
-        })
+        }),
       );
     });
 
@@ -197,7 +197,7 @@ describe('Billing Controller', () => {
       await createCheckout(req, res, next);
 
       expect(next).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Organization ID is required' })
+        expect.objectContaining({ message: 'Organization ID is required' }),
       );
     });
   });
@@ -215,7 +215,7 @@ describe('Billing Controller', () => {
         role: 'admin',
       });
       (billingService.createPortalSession as any).mockResolvedValue(
-        'https://billing.stripe.com/portal'
+        'https://billing.stripe.com/portal',
       );
 
       await createPortal(req, res, next);
@@ -224,7 +224,7 @@ describe('Billing Controller', () => {
         expect.objectContaining({
           success: true,
           data: { url: 'https://billing.stripe.com/portal' },
-        })
+        }),
       );
     });
   });
@@ -257,7 +257,7 @@ describe('Billing Controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ error: 'Missing stripe-signature header' })
+        expect.objectContaining({ error: 'Missing stripe-signature header' }),
       );
     });
   });

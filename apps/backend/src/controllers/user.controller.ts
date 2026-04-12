@@ -18,7 +18,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 export async function listPendingApprovals(
   _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const users = await prisma.user.findMany({
@@ -60,7 +60,7 @@ export async function listPendingApprovals(
 export async function getPendingCount(
   _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const count = await prisma.user.count({

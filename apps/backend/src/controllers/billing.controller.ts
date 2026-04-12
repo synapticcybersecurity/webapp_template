@@ -54,7 +54,7 @@ export async function listPlans(_req: Request, res: Response, next: NextFunction
 export async function getBillingOverview(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const orgId = requireOrgId(req);
@@ -82,7 +82,7 @@ export async function getBillingOverview(
 export async function createCheckout(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const orgId = requireOrgId(req);
@@ -95,7 +95,7 @@ export async function createCheckout(
       input.plan,
       input.interval,
       `${FRONTEND_URL}/organizations/${orgId}/billing?success=true`,
-      `${FRONTEND_URL}/organizations/${orgId}/billing?canceled=true`
+      `${FRONTEND_URL}/organizations/${orgId}/billing?canceled=true`,
     );
 
     const response: ApiResponse = {
@@ -119,7 +119,7 @@ export async function createPortal(req: Request, res: Response, next: NextFuncti
 
     const url = await billingService.createPortalSession(
       orgId,
-      `${FRONTEND_URL}/organizations/${orgId}/billing`
+      `${FRONTEND_URL}/organizations/${orgId}/billing`,
     );
 
     const response: ApiResponse = {
@@ -162,7 +162,7 @@ export async function getInvoices(req: Request, res: Response, next: NextFunctio
 export async function handleWebhook(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const signature = req.headers['stripe-signature'] as string;

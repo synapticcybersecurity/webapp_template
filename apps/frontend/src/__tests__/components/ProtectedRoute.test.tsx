@@ -14,7 +14,7 @@ function renderProtectedRoute(
   options: {
     requireAdmin?: boolean;
     initialEntry?: string;
-  } = {}
+  } = {},
 ) {
   const { requireAdmin = false, initialEntry = '/protected' } = options;
   return renderWithProviders(
@@ -25,7 +25,7 @@ function renderProtectedRoute(
         <Route path="/protected" element={<div>Protected Content</div>} />
       </Route>
     </Routes>,
-    { routerProps: { initialEntries: [initialEntry] } }
+    { routerProps: { initialEntries: [initialEntry] } },
   );
 }
 

@@ -20,7 +20,7 @@ import {
 export async function createProject(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const parsed = createProjectSchema.safeParse(req.body);
@@ -93,7 +93,7 @@ export async function listProjects(req: Request, res: Response, next: NextFuncti
         select: { organizationId: true },
       })
       .then((memberships: { organizationId: string }[]) =>
-        memberships.map((m: { organizationId: string }) => m.organizationId)
+        memberships.map((m: { organizationId: string }) => m.organizationId),
       );
 
     const where: Record<string, unknown> = {
@@ -223,7 +223,7 @@ export async function getProject(req: Request, res: Response, next: NextFunction
 export async function updateProject(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { id } = req.params;
@@ -287,7 +287,7 @@ export async function updateProject(
 export async function deleteProject(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
     const { id } = req.params;
