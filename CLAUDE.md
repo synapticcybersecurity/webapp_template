@@ -124,15 +124,18 @@ npm run db:studio         # Prisma Studio GUI
 - Plugins: admin, organization
 - New users auto-banned (pending admin approval)
 
-**Express middleware ordering is critical — do not change** (in `apps/backend/src/index.ts`):
+**Express middleware ordering is critical — do not change** (in `apps/backend/src/app.ts`):
 
-1. Helmet
-2. CORS
-3. **Better Auth handler BEFORE `express.json()`** — `app.all('/api/auth/*', toNodeHandler(auth))`
-4. `express.json()` and `express.urlencoded()`
-5. CSRF protection
-6. Request logging
-7. Routes
+1. Timeout + Request ID
+2. Helmet
+3. CORS
+4. Cookie parser
+5. Rate limiting
+6. **Better Auth handler BEFORE `express.json()`** — `app.all('/api/auth/*', toNodeHandler(auth))`
+7. `express.json()` and `express.urlencoded()` (skips Stripe webhook — needs raw body)
+8. CSRF protection (skips webhooks and auth routes)
+9. Request logging
+10. Routes
 
 ---
 
