@@ -96,7 +96,7 @@ npm run test:coverage --workspace=apps/frontend
 
 - **Framework:** Vitest (all packages)
 - **Frontend:** jsdom + React Testing Library
-- **E2E:** Playwright (Chromium)
+- **E2E:** not yet implemented — a Playwright job is scaffolded in `.github/workflows/e2e.yml` (manual-only until a config + tests exist)
 - **Test location:** `src/__tests__/` directories in each workspace
 - **Shared package:** has its own test suite for validation schemas
 

@@ -1,8 +1,13 @@
 name: E2E Tests
 
 on:
-  pull_request:
-    branches: [main]
+  # E2E is not yet implemented — there is no Playwright config or tests in the
+  # repo yet, so this job cannot pass. Manual-only (workflow_dispatch) so it
+  # doesn't fail on every PR. To enable it: add @playwright/test, a
+  # playwright.config.ts with a webServer that builds + starts backend and
+  # frontend, real specs, then restore the `pull_request` trigger below.
+  # pull_request:
+  #   branches: [main]
   workflow_dispatch:
 
 env:
@@ -53,7 +58,9 @@ jobs:
         run: npm run db:generate --workspace=apps/backend
 
       - name: Run database migrations
-        run: npx --workspace=apps/backend prisma migrate deploy
+        # Use the npm script so Prisma resolves --schema=src/prisma/schema.prisma;
+        # `npx --workspace` doesn't change cwd, so raw prisma can't find the schema.
+        run: npm run db:migrate:prod --workspace=apps/backend
 
       - name: Install Playwright (Chromium only)
         run: npx playwright install chromium --with-deps
