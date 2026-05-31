@@ -300,7 +300,7 @@ vi.mock('../../lib/api', () => ({
         data: {
           data: { id: '1', email: 'test@example.com', role: 'user' },
         },
-      })
+      }),
     ),
   },
 }));
