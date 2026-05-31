@@ -102,6 +102,7 @@ Husky pre-commit hook runs Prettier via lint-staged on TS/JSON/MD files.
 ## Database and Prisma
 
 - Schema: `apps/backend/src/prisma/schema.prisma` (12 models) — **read it before any database work**
+- **Use Prisma's query builder exclusively** — never `prisma.$queryRaw` or raw SQL; it bypasses type safety and tenant scoping, and breaks on schema changes
 - Better Auth tables use `@@map("lowercase")` with `String @id @default(cuid())`
 - Models: User, Session, Account, Verification, Organization, OrganizationMember, OrganizationInvitation, Subscription, UsageRecord, AuditLog, Project, Task
 
@@ -113,7 +114,7 @@ npm run db:seed           # Seed test data
 npm run db:studio         # Prisma Studio GUI
 ```
 
-- **NEVER reset or wipe the database without explicit user permission** — `prisma migrate reset` or `prisma db push --force-reset` is FORBIDDEN unless the user explicitly asks
+- **NEVER reset or wipe the database without explicit user permission** — `prisma migrate reset` or `prisma db push --force-reset` is FORBIDDEN unless the user explicitly asks. If a migration fails or Prisma prompts for a reset, **STOP and ask** before proceeding — data loss is painful to recover from
 
 ---
 
