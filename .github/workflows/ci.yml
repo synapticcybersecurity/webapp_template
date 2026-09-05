@@ -3,8 +3,11 @@ name: CI
 on:
   push:
     branches: [main]
+  # Every pull request, not only those targeting main. Restricting this to
+  # `branches: [main]` silently skipped CI entirely on stacked PRs — a branch
+  # based on another feature branch reported "no checks reported" and looked
+  # clean because nothing had run.
   pull_request:
-    branches: [main]
 
 env:
   NODE_VERSION: '22'
