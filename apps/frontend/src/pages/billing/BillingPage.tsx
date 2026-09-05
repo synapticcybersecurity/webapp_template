@@ -1,6 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
 import { billingAPI, meteringAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,9 +36,9 @@ function formatDate(date: string | Date | null): string {
 function getStatusBadge(status: string) {
   switch (status) {
     case 'active':
-      return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      return <Badge className="border-transparent bg-success/15 text-success">Active</Badge>;
     case 'trialing':
-      return <Badge className="bg-blue-100 text-blue-800">Trial</Badge>;
+      return <Badge className="border-transparent bg-info/15 text-info">Trial</Badge>;
     case 'past_due':
       return <Badge variant="destructive">Past Due</Badge>;
     case 'canceled':
@@ -108,24 +107,24 @@ export default function BillingPage() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (error) {
     return (
-      <Layout>
+      <>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error instanceof Error ? error.message : 'Failed to load billing information'}
           </AlertDescription>
         </Alert>
-      </Layout>
+      </>
     );
   }
 
@@ -135,7 +134,7 @@ export default function BillingPage() {
   const isFreePlan = !subscription?.stripeSubscriptionId;
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Billing</h1>
@@ -145,7 +144,7 @@ export default function BillingPage() {
         {/* Success/Cancel alerts */}
         {success && (
           <Alert>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <CheckCircle2 className="h-4 w-4 text-success" />
             <AlertDescription>
               Your subscription has been activated. It may take a moment to update.
             </AlertDescription>
@@ -359,16 +358,16 @@ export default function BillingPage() {
           </Card>
         )}
       </div>
-    </Layout>
+    </>
   );
 }
 
 function InvoiceStatusBadge({ status }: { status: string | null }) {
   switch (status) {
     case 'paid':
-      return <Badge className="bg-green-100 text-green-800">Paid</Badge>;
+      return <Badge className="border-transparent bg-success/15 text-success">Paid</Badge>;
     case 'open':
-      return <Badge className="bg-blue-100 text-blue-800">Open</Badge>;
+      return <Badge className="border-transparent bg-info/15 text-info">Open</Badge>;
     case 'draft':
       return <Badge variant="outline">Draft</Badge>;
     case 'void':
@@ -410,7 +409,7 @@ function UsageBar({
         <div className="h-2 w-full rounded-full bg-secondary">
           <div
             className={`h-2 rounded-full transition-all ${
-              isNearLimit ? 'bg-orange-500' : 'bg-primary'
+              isNearLimit ? 'bg-warning' : 'bg-primary'
             }`}
             style={{ width: `${percentage}%` }}
           />

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { authClient } from '@/lib/auth-client';
-import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -223,7 +222,7 @@ export default function ProfilePage() {
   const hasChanges = formData.name !== (user?.name || '');
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
@@ -253,12 +252,12 @@ export default function ProfilePage() {
                   </div>
                   <p className="text-sm text-muted-foreground">{user?.email}</p>
                   {user?.emailVerified ? (
-                    <div className="flex items-center gap-1 text-xs text-green-600">
+                    <div className="flex items-center gap-1 text-xs text-success">
                       <CheckCircle2 className="h-3 w-3" />
                       Email verified
                     </div>
                   ) : (
-                    <div className="flex items-center gap-1 text-xs text-yellow-600">
+                    <div className="flex items-center gap-1 text-xs text-warning">
                       <AlertCircle className="h-3 w-3" />
                       Email not verified
                     </div>
@@ -354,6 +353,6 @@ export default function ProfilePage() {
           <ChangePasswordCard />
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
 import { billingAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,16 +26,16 @@ export default function PricingPage() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight">Simple, transparent pricing</h1>
@@ -123,6 +122,6 @@ export default function PricingPage() {
           })}
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

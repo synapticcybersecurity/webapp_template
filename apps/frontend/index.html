@@ -6,6 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Webapp Template - Modern full-stack application" />
     <title>Webapp Template</title>
+    <script>
+      // Apply the stored theme before first paint. React mounting a moment
+      // later is far too late: a dark-mode user would get a white flash on
+      // every page load, which is the single most noticeable dark-mode bug.
+      // Kept inline and dependency-free so nothing can delay it, and wrapped
+      // because localStorage throws (not returns null) in some privacy modes.
+      (function () {
+        try {
+          var stored = localStorage.getItem('webapp.theme');
+          var dark =
+            stored === 'dark' ||
+            ((!stored || stored === 'system') &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {
+          /* No stored preference available — fall back to the light default. */
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

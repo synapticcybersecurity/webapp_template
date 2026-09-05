@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
   // No token — show a "check your email" message
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Verify your email</CardTitle>
@@ -75,7 +75,7 @@ export default function VerifyEmailPage() {
   // Verifying...
   if (verifyMutation.isPending) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Verifying your email</CardTitle>
@@ -92,7 +92,7 @@ export default function VerifyEmailPage() {
   // Verification failed
   if (verifyMutation.isError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Verification failed</CardTitle>
@@ -125,7 +125,7 @@ export default function VerifyEmailPage() {
 
   // Verification successful
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Email verified</CardTitle>

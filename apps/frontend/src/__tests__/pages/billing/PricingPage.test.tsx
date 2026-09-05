@@ -52,11 +52,6 @@ vi.mock('@/lib/api', () => ({
   },
 }));
 
-// Mock the Layout component to simplify rendering
-vi.mock('@/components/layout/Layout', () => ({
-  Layout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
 describe('PricingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
