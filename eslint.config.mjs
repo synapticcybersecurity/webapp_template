@@ -59,6 +59,16 @@ export default tseslint.config(
     },
   },
 
+  // shadcn's ui/ primitives export their cva variants alongside the component
+  // (`buttonVariants` beside `Button`). react-refresh flags that, but it is the
+  // upstream shape these files are generated in and ACREv3 keeps it too --
+  // restructuring vendored primitives to satisfy a fast-refresh hint is a bad
+  // trade. Scoped off here rather than silenced file-by-file.
+  {
+    files: ['apps/frontend/src/components/ui/**/*.{ts,tsx}'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+
   // Tests: Vitest globals, and console output is fine.
   {
     files: ['**/__tests__/**/*.{ts,tsx}', '**/*.{test,spec}.{ts,tsx}'],
