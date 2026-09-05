@@ -15,6 +15,9 @@ import {
   sendPendingApprovalEmail,
 } from './email.js';
 import { logger } from '../utils/logger.js';
+import { createAuthMiddleware } from 'better-auth/api';
+import { extractBaseDomain, isBootstrapAdmin } from '../services/email-domain.service.js';
+import { logAuthEvent } from '../services/audit-log.service.js';
 
 const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET || '';
 const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3001';
@@ -23,6 +26,8 @@ const SESSION_COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE === 'true';
 const SESSION_COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE || 'lax') as
   'lax' | 'strict' | 'none';
 const SESSION_EXPIRY_DAYS = parseInt(process.env.SESSION_EXPIRY_DAYS || '7');
+const ADMIN_EMAILS = process.env.ADMIN_EMAILS || '';
+const TRIAL_DAYS = parseInt(process.env.TRIAL_PERIOD_DAYS || '14');
 
 if (!BETTER_AUTH_SECRET || BETTER_AUTH_SECRET.length < 32) {
   logger.error('BETTER_AUTH_SECRET must be set and at least 32 characters long');
@@ -113,37 +118,215 @@ export const auth = betterAuth({
     max: 10, // 10 requests per window
   },
 
-  // Database hooks for admin approval workflow
+  // Database hooks: admin approval workflow and tenant auto-join
   databaseHooks: {
     user: {
       create: {
         before: async (user) => {
-          // Auto-ban new users pending admin approval
+          // Ban-by-default: every new user is `pending_approval` until an
+          // admin approves them. One bypass — an email in ADMIN_EMAILS becomes
+          // an admin immediately. Without that bypass a fresh deployment has
+          // no one able to approve anybody, and the whole instance deadlocks.
+          if (isBootstrapAdmin(user.email, ADMIN_EMAILS)) {
+            logger.info(`Bootstrap admin recognised on signup: ${user.email}`);
+            return { data: { ...user, role: 'admin', emailVerified: true } };
+          }
           return {
-            data: {
-              ...user,
-              banned: true,
-              banReason: 'pending_approval',
-            },
+            data: { ...user, banned: true, banReason: 'pending_approval' },
           };
         },
         after: async (user) => {
-          // Notify all admin users of the new registration
-          try {
-            const admins = await prisma.user.findMany({
-              where: { role: 'admin' },
-              select: { email: true },
-            });
+          // Two best-effort steps. Neither may break signup, so each carries
+          // its own try/catch rather than sharing one.
 
-            for (const admin of admins) {
-              await sendPendingApprovalEmail(admin.email, user.name || 'Unknown', user.email);
+          // 1. Auto-join the tenant that owns this email domain.
+          try {
+            const domain = extractBaseDomain(user.email);
+            if (domain) {
+              const orgDomain = await prisma.organizationDomain.findUnique({
+                where: { domain },
+                select: { organizationId: true },
+              });
+              if (orgDomain) {
+                // The first user into an org becomes its owner. Otherwise an
+                // org created by domain import would have no one able to
+                // manage billing or invite anyone.
+                const memberCount = await prisma.organizationMember.count({
+                  where: { organizationId: orgDomain.organizationId },
+                });
+                await prisma.organizationMember.upsert({
+                  where: {
+                    organizationId_userId: {
+                      organizationId: orgDomain.organizationId,
+                      userId: user.id,
+                    },
+                  },
+                  create: {
+                    organizationId: orgDomain.organizationId,
+                    userId: user.id,
+                    role: memberCount === 0 ? 'owner' : 'member',
+                  },
+                  update: {},
+                });
+                logger.info(
+                  `Auto-joined ${user.email} to organization ${orgDomain.organizationId} via domain ${domain}`,
+                );
+              }
             }
           } catch (error) {
-            logger.error('Failed to send pending approval notification emails:', error);
+            logger.error('Organization domain auto-join failed:', error);
           }
+
+          // 2. Tell the admins someone is waiting — but only if they actually
+          // landed in the queue. A bootstrap admin needs no approval.
+          if ((user as { banned?: boolean }).banned) {
+            try {
+              const admins = await prisma.user.findMany({
+                where: { role: 'admin' },
+                select: { email: true },
+              });
+              for (const admin of admins) {
+                await sendPendingApprovalEmail(admin.email, user.name || 'Unknown', user.email);
+              }
+            } catch (error) {
+              logger.error('Failed to send pending approval notification emails:', error);
+            }
+          }
+
+          void logAuthEvent('user_registered', user.id, { email: user.email });
         },
       },
     },
+    session: {
+      create: {
+        // Give a new session the user's org as its initial scope, so a
+        // single-org user is scoped from their first request without having to
+        // touch a switcher they will never see. Admins are left unscoped
+        // (platform-wide) on purpose.
+        before: async (session) => {
+          try {
+            const user = await prisma.user.findUnique({
+              where: { id: session.userId },
+              select: { role: true },
+            });
+            if (user?.role === 'admin') return { data: session };
+
+            const membership = await prisma.organizationMember.findFirst({
+              where: { userId: session.userId },
+              orderBy: { createdAt: 'asc' },
+              select: { organizationId: true },
+            });
+            if (membership) {
+              return {
+                data: { ...session, activeOrganizationId: membership.organizationId },
+              };
+            }
+          } catch (error) {
+            logger.error('Failed to set initial active organization on session:', error);
+          }
+          return { data: session };
+        },
+      },
+    },
+  },
+
+  /**
+   * Audit trail for authentication and privileged admin events.
+   *
+   * These are the actions a security review asks about after the fact —
+   * especially impersonation, bans and role changes, where the acting admin
+   * and the affected user are different people and the request log alone
+   * cannot tell them apart. Writes are best-effort and never block the flow.
+   */
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const context = ctx.context as {
+        session?: { user?: { id?: string; email?: string } };
+        newSession?: { user?: { id?: string; email?: string } };
+      };
+      // On sign-in the prior session is empty, so the newly created session is
+      // the one that identifies the actor.
+      const actor = context.newSession?.user ?? context.session?.user;
+      const actorId = actor?.id;
+      const actorEmail = actor?.email;
+      const ip = ctx.headers?.get('x-forwarded-for')?.split(',')[0]?.trim();
+
+      switch (ctx.path) {
+        case '/sign-in/email':
+        case '/sign-in/social':
+          if (actorId) void logAuthEvent('user_signed_in', actorId, { email: actorEmail }, ip);
+          break;
+        case '/sign-out':
+          if (actorId) void logAuthEvent('user_signed_out', actorId, { email: actorEmail }, ip);
+          break;
+        case '/verify-email':
+          if (actorId) void logAuthEvent('email_verified', actorId, { email: actorEmail }, ip);
+          break;
+        case '/change-password':
+          if (actorId) void logAuthEvent('password_changed', actorId, { email: actorEmail }, ip);
+          break;
+        case '/reset-password':
+          void logAuthEvent('password_reset_completed', actorId, undefined, ip);
+          break;
+        case '/admin/impersonate-user': {
+          // ctx.context.session is still the admin here; the target is in the
+          // request body. Record both, or the trail cannot answer "who did
+          // this to whom".
+          const targetUserId = (ctx.body as { userId?: string } | undefined)?.userId ?? null;
+          const adminId = context.session?.user?.id;
+          if (adminId) {
+            void logAuthEvent(
+              'user_impersonation_started',
+              adminId,
+              { adminEmail: context.session?.user?.email, targetUserId },
+              ip,
+            );
+          }
+          break;
+        }
+        case '/admin/stop-impersonating': {
+          // After stopping, newSession is the restored admin. Attribute the
+          // event to the admin so the trail reads as one continuous action.
+          const restoredAdmin = context.newSession?.user;
+          if (restoredAdmin?.id) {
+            void logAuthEvent(
+              'user_impersonation_stopped',
+              restoredAdmin.id,
+              { adminEmail: restoredAdmin.email },
+              ip,
+            );
+          }
+          break;
+        }
+        case '/admin/ban-user':
+          void logAuthEvent(
+            'user_banned',
+            actorId,
+            { targetUserId: (ctx.body as { userId?: string } | undefined)?.userId ?? null },
+            ip,
+          );
+          break;
+        case '/admin/unban-user':
+          void logAuthEvent(
+            'user_unbanned',
+            actorId,
+            { targetUserId: (ctx.body as { userId?: string } | undefined)?.userId ?? null },
+            ip,
+          );
+          break;
+        case '/admin/set-role':
+          void logAuthEvent(
+            'user_role_changed',
+            actorId,
+            { targetUserId: (ctx.body as { userId?: string } | undefined)?.userId ?? null },
+            ip,
+          );
+          break;
+        case '/organization/accept-invitation':
+          if (actorId) void logAuthEvent('invitation_accepted', actorId, { email: actorEmail }, ip);
+          break;
+      }
+    }),
   },
 
   // Plugins
@@ -156,6 +339,24 @@ export const auth = betterAuth({
 
     // Organization plugin for multi-tenant support
     organization({
+      organizationHooks: {
+        // Start every new tenant on a free trial. Without this an org is
+        // created already paywalled and the first thing a new customer sees is
+        // a payment wall instead of the product.
+        //
+        // This belongs to the organization plugin, not databaseHooks —
+        // databaseHooks only covers Better Auth's core models (user, session,
+        // account, verification), so an `organization` entry there is accepted
+        // but never called.
+        beforeCreateOrganization: async ({ organization }) => {
+          return {
+            data: {
+              ...organization,
+              trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+            },
+          };
+        },
+      },
       // Send invitation email when member is invited
       async sendInvitationEmail(data) {
         logger.info(`Sending organization invitation to ${data.email}`);

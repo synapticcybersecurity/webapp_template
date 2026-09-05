@@ -7,6 +7,7 @@ import type Stripe from 'stripe';
 import { prisma } from '../config/database.js';
 import { stripe, PLANS, STRIPE_WEBHOOK_SECRET } from '../config/stripe.js';
 import { logger } from '../utils/logger.js';
+import { invalidateSubscriptionCache } from './subscription.service.js';
 import { BadRequestError, NotFoundError, AppError } from '../utils/errors.js';
 import { HttpStatus, ErrorCode } from '@webapp/shared';
 import type { BillingPlan, BillingInterval, PlanUsage, Invoice } from '@webapp/shared';
@@ -299,6 +300,11 @@ export async function syncSubscription(sub: Stripe.Subscription): Promise<void> 
     },
   });
 
+  // The paywall reads a Redis-cached view of this row. Without invalidating
+  // here, a cancellation or downgrade keeps serving the old answer for up to
+  // the cache TTL — the org would retain access it no longer has.
+  await invalidateSubscriptionCacheForCustomer(customerId);
+
   logger.info(`Synced subscription ${sub.id} for customer ${customerId}`, {
     plan,
     status: sub.status,
@@ -324,5 +330,22 @@ export async function handleSubscriptionDeleted(sub: Stripe.Subscription): Promi
     },
   });
 
+  await invalidateSubscriptionCacheForCustomer(customerId);
+
   logger.info(`Subscription canceled for customer ${customerId}`);
+}
+
+/**
+ * Drop the cached subscription state for whichever organization owns this
+ * Stripe customer. The webhook only knows the customer id, so resolve it back
+ * to the organization first.
+ */
+async function invalidateSubscriptionCacheForCustomer(customerId: string): Promise<void> {
+  const subscription = await prisma.subscription.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { organizationId: true },
+  });
+  if (subscription) {
+    await invalidateSubscriptionCache(subscription.organizationId);
+  }
 }

@@ -5,7 +5,12 @@ const { mockPrisma, mockStripe } = vi.hoisted(() => {
   const mockFn = () => vi.fn();
   return {
     mockPrisma: {
-      subscription: { findUnique: mockFn(), create: mockFn(), updateMany: mockFn() },
+      subscription: {
+        findUnique: mockFn(),
+        findFirst: mockFn(),
+        create: mockFn(),
+        updateMany: mockFn(),
+      },
       organization: { findUnique: mockFn() },
       organizationMember: { findUnique: mockFn(), count: mockFn() },
       project: { count: mockFn() },
@@ -53,6 +58,13 @@ vi.mock('../../config/stripe.js', () => ({
 
 vi.mock('../../utils/logger.js', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+}));
+
+// The webhook handlers invalidate the paywall cache after writing. That
+// behavior is covered in subscription.service.test.ts; stub it here so these
+// tests do not need a Redis mock.
+vi.mock('../../services/subscription.service.js', () => ({
+  invalidateSubscriptionCache: vi.fn(),
 }));
 
 import {

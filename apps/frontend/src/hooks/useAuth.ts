@@ -1,17 +1,7 @@
 /**
- * Authentication Hook
- * Provides auth state and operations throughout the app using better-auth client
+ * Kept as a re-export so existing `@/hooks/useAuth` imports keep working.
+ * The implementation moved to contexts/AuthContext, which derives isAdmin,
+ * isImpersonating and activeOrganizationId from one shared session
+ * subscription rather than each caller re-deriving them.
  */
-
-import { authClient } from '@/lib/auth-client';
-
-export function useAuth() {
-  const { data: session, isPending, error } = authClient.useSession();
-
-  return {
-    user: session?.user ?? null,
-    isLoading: isPending,
-    isAuthenticated: !!session?.user,
-    error,
-  };
-}
+export { useAuth } from '@/contexts/AuthContext';

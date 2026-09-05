@@ -9,7 +9,43 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { hashPassword } from 'better-auth/crypto';
+
+/**
+ * Create (or refresh) a credential login for a seeded user.
+ *
+ * Better Auth stores passwords on Account rows with providerId 'credential',
+ * hashed with its own scrypt parameters — NOT on User.hashedPassword, and not
+ * with bcrypt. An earlier version of this seed wrote a bcrypt hash to
+ * User.hashedPassword, which meant none of the seeded accounts could actually
+ * sign in: the column is not one Better Auth ever reads.
+ */
+const CREDENTIAL_ISSUER = 'local:credential';
+
+async function setCredentialPassword(userId: string, password: string): Promise<void> {
+  const hashed = await hashPassword(password);
+  const existing = await prisma.account.findFirst({
+    where: { userId, providerId: 'credential' },
+    select: { id: true },
+  });
+  if (existing) {
+    await prisma.account.update({ where: { id: existing.id }, data: { password: hashed } });
+    return;
+  }
+  await prisma.account.create({
+    data: {
+      userId,
+      accountId: userId,
+      providerId: 'credential',
+      // Better Auth matches the credential account on (providerId, issuer,
+      // accountId). `local:credential` is the synthetic issuer it uses for
+      // providers that have none of their own; omitting it makes the row
+      // invisible to sign-in.
+      issuer: CREDENTIAL_ISSUER,
+      password: hashed,
+    },
+  });
+}
 
 const prisma = new PrismaClient();
 
@@ -23,7 +59,6 @@ async function main() {
   console.log('👤 Creating users...');
 
   // Admin user
-  const adminPassword = await bcrypt.hash('Admin123!', 10);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@example.com' },
     update: {},
@@ -32,13 +67,12 @@ async function main() {
       name: 'Admin User',
       emailVerified: true,
       role: 'admin',
-      hashedPassword: adminPassword,
     },
   });
+  await setCredentialPassword(admin.id, 'Admin123!');
   console.log(`  ✓ Admin user created: ${admin.email}`);
 
   // Regular users
-  const user1Password = await bcrypt.hash('User123!', 10);
   const user1 = await prisma.user.upsert({
     where: { email: 'user1@example.com' },
     update: {},
@@ -47,12 +81,11 @@ async function main() {
       name: 'John Doe',
       emailVerified: true,
       role: 'user',
-      hashedPassword: user1Password,
     },
   });
+  await setCredentialPassword(user1.id, 'User123!');
   console.log(`  ✓ User 1 created: ${user1.email}`);
 
-  const user2Password = await bcrypt.hash('User123!', 10);
   const user2 = await prisma.user.upsert({
     where: { email: 'user2@example.com' },
     update: {},
@@ -61,13 +94,12 @@ async function main() {
       name: 'Jane Smith',
       emailVerified: true,
       role: 'user',
-      hashedPassword: user2Password,
     },
   });
+  await setCredentialPassword(user2.id, 'User123!');
   console.log(`  ✓ User 2 created: ${user2.email}`);
 
   // Unverified user (for testing email verification)
-  const user3Password = await bcrypt.hash('User123!', 10);
   const user3 = await prisma.user.upsert({
     where: { email: 'user3@example.com' },
     update: {},
@@ -76,9 +108,9 @@ async function main() {
       name: 'Bob Johnson',
       emailVerified: false,
       role: 'user',
-      hashedPassword: user3Password,
     },
   });
+  await setCredentialPassword(user3.id, 'User123!');
   console.log(`  ✓ User 3 created (unverified): ${user3.email}`);
 
   // =============================================================================

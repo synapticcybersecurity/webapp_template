@@ -1,11 +1,25 @@
 /**
  * Project Controller (Example Domain Model)
- * Demonstrates CRUD operations and organization relationships
+ *
+ * Reference implementation for tenant-scoped CRUD. Every authorization
+ * decision here goes through services/access-control.service.ts — no handler
+ * queries organizationMember directly. Copy this shape for new domain models;
+ * the previous version re-derived scoping inline in each handler and the five
+ * copies had drifted apart.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../config/database.js';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors.js';
+import {
+  assertOrgAccess,
+  assertOrgRole,
+  canAccessOrganization,
+  ctxFromRequest,
+  getAccessibleOrgIds,
+  isSystemAdmin,
+  type AccessContext,
+} from '../services/access-control.service.js';
 import {
   ApiResponse,
   PaginatedResponse,
@@ -15,8 +29,22 @@ import {
 } from '@webapp/shared';
 
 /**
- * Create project
+ * Whether the caller may see a project at all.
+ *
+ * Personal projects (no organizationId) belong to their creator alone —
+ * organization scope says nothing about them. Org projects are visible to
+ * anyone who can access the org.
  */
+async function canReadProject(
+  ctx: AccessContext,
+  project: { createdBy: string; organizationId: string | null },
+): Promise<boolean> {
+  if (project.organizationId) {
+    return canAccessOrganization(ctx, project.organizationId);
+  }
+  return project.createdBy === ctx.userId || isSystemAdmin(ctx);
+}
+
 export async function createProject(
   req: Request,
   res: Response,
@@ -28,22 +56,10 @@ export async function createProject(
       throw new BadRequestError(parsed.error.errors[0]?.message ?? 'Invalid input');
     }
     const { name, description, organizationId } = parsed.data;
-    const userId = req.user!.id;
+    const ctx = ctxFromRequest(req);
 
-    // If organizationId provided, verify membership
     if (organizationId) {
-      const membership = await prisma.organizationMember.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId,
-            userId,
-          },
-        },
-      });
-
-      if (!membership) {
-        throw new ForbiddenError('You are not a member of this organization');
-      }
+      await assertOrgAccess(ctx, organizationId);
     }
 
     const project = await prisma.project.create({
@@ -51,16 +67,10 @@ export async function createProject(
         name,
         description: description || null,
         organizationId: organizationId || null,
-        createdBy: userId,
+        createdBy: ctx.userId,
       },
       include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
+        organization: { select: { id: true, name: true, slug: true } },
       },
     });
 
@@ -69,46 +79,39 @@ export async function createProject(
       data: project,
       timestamp: new Date().toISOString(),
     };
-
     res.status(201).json(response);
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * List projects (user's personal + organization projects)
- */
+/** List the caller's personal projects plus every project in reach. */
 export async function listProjects(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const userId = req.user!.id;
-    const query = listProjectsQuerySchema.parse(req.query);
-    const { page, limit, organizationId } = query;
+    const ctx = ctxFromRequest(req);
+    const { page, limit, organizationId } = listProjectsQuerySchema.parse(req.query);
     const skip = (page - 1) * limit;
 
-    // Get user's organizations
-    const userOrgIds = await prisma.organizationMember
-      .findMany({
-        where: { userId },
-        select: { organizationId: true },
-      })
-      .then((memberships: { organizationId: string }[]) =>
-        memberships.map((m: { organizationId: string }) => m.organizationId),
-      );
+    const accessibleOrgIds = await getAccessibleOrgIds(ctx);
 
-    const where: Record<string, unknown> = {
-      OR: [
-        { createdBy: userId, organizationId: null }, // Personal projects
-        { organizationId: { in: userOrgIds } }, // Organization projects
-      ],
-    };
+    let where: Record<string, unknown>;
 
     if (organizationId) {
-      // Verify user has access to this organization
-      if (!userOrgIds.includes(organizationId)) {
-        throw new ForbiddenError('You do not have access to this organization');
-      }
-      where.organizationId = organizationId;
+      // Explicit org filter — authorize it rather than silently returning [].
+      await assertOrgAccess(ctx, organizationId);
+      where = { organizationId };
+    } else if (accessibleOrgIds === null) {
+      // Platform-wide admin: every org project, plus their own personal ones.
+      where = {
+        OR: [{ organizationId: { not: null } }, { createdBy: ctx.userId }],
+      };
+    } else {
+      where = {
+        OR: [
+          { createdBy: ctx.userId, organizationId: null },
+          { organizationId: { in: accessibleOrgIds } },
+        ],
+      };
     }
 
     const [projects, total] = await Promise.all([
@@ -117,16 +120,8 @@ export async function listProjects(req: Request, res: Response, next: NextFuncti
         skip,
         take: limit,
         include: {
-          organization: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-            },
-          },
-          _count: {
-            select: { tasks: true },
-          },
+          organization: { select: { id: true, name: true, slug: true } },
+          _count: { select: { tasks: true } },
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -147,61 +142,28 @@ export async function listProjects(req: Request, res: Response, next: NextFuncti
       },
       timestamp: new Date().toISOString(),
     };
-
     res.json(response);
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Get project by ID
- */
 export async function getProject(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { id } = req.params;
-    const userId = req.user!.id;
+    const ctx = ctxFromRequest(req);
 
     const project = await prisma.project.findUnique({
       where: { id },
       include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        tasks: {
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        },
-        _count: {
-          select: { tasks: true },
-        },
+        organization: { select: { id: true, name: true, slug: true } },
+        tasks: { orderBy: { createdAt: 'desc' }, take: 10 },
+        _count: { select: { tasks: true } },
       },
     });
 
-    if (!project) {
-      throw new NotFoundError('Project not found');
-    }
-
-    // Check access: creator or organization member
-    let hasAccess = project.createdBy === userId;
-
-    if (project.organizationId && !hasAccess) {
-      const membership = await prisma.organizationMember.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: project.organizationId,
-            userId,
-          },
-        },
-      });
-      hasAccess = !!membership;
-    }
-
-    if (!hasAccess) {
+    if (!project) throw new NotFoundError('Project not found');
+    if (!(await canReadProject(ctx, project))) {
       throw new ForbiddenError('You do not have access to this project');
     }
 
@@ -210,16 +172,13 @@ export async function getProject(req: Request, res: Response, next: NextFunction
       data: project,
       timestamp: new Date().toISOString(),
     };
-
     res.json(response);
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Update project
- */
+/** Update: org projects need owner/admin; personal projects need the creator. */
 export async function updateProject(
   req: Request,
   res: Response,
@@ -232,32 +191,14 @@ export async function updateProject(
       throw new BadRequestError(parsed.error.errors[0]?.message ?? 'Invalid input');
     }
     const { name, description } = parsed.data;
-    const userId = req.user!.id;
+    const ctx = ctxFromRequest(req);
 
-    const project = await prisma.project.findUnique({
-      where: { id },
-    });
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project) throw new NotFoundError('Project not found');
 
-    if (!project) {
-      throw new NotFoundError('Project not found');
-    }
-
-    // Check access
-    let hasAccess = project.createdBy === userId;
-
-    if (project.organizationId && !hasAccess) {
-      const membership = await prisma.organizationMember.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: project.organizationId,
-            userId,
-          },
-        },
-      });
-      hasAccess = membership?.role === 'owner' || membership?.role === 'admin';
-    }
-
-    if (!hasAccess) {
+    if (project.organizationId) {
+      await assertOrgRole(ctx, project.organizationId, ['owner', 'admin']);
+    } else if (project.createdBy !== ctx.userId && !isSystemAdmin(ctx)) {
       throw new ForbiddenError('You do not have permission to update this project');
     }
 
@@ -274,16 +215,13 @@ export async function updateProject(
       data: updatedProject,
       timestamp: new Date().toISOString(),
     };
-
     res.json(response);
   } catch (error) {
     next(error);
   }
 }
 
-/**
- * Delete project
- */
+/** Delete is owner-only for org projects — a stricter bar than update. */
 export async function deleteProject(
   req: Request,
   res: Response,
@@ -291,45 +229,24 @@ export async function deleteProject(
 ): Promise<void> {
   try {
     const { id } = req.params;
-    const userId = req.user!.id;
+    const ctx = ctxFromRequest(req);
 
-    const project = await prisma.project.findUnique({
-      where: { id },
-    });
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project) throw new NotFoundError('Project not found');
 
-    if (!project) {
-      throw new NotFoundError('Project not found');
-    }
-
-    // Only creator or org owner can delete
-    let canDelete = project.createdBy === userId;
-
-    if (project.organizationId && !canDelete) {
-      const membership = await prisma.organizationMember.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: project.organizationId,
-            userId,
-          },
-        },
-      });
-      canDelete = membership?.role === 'owner';
-    }
-
-    if (!canDelete) {
+    if (project.organizationId) {
+      await assertOrgRole(ctx, project.organizationId, ['owner']);
+    } else if (project.createdBy !== ctx.userId && !isSystemAdmin(ctx)) {
       throw new ForbiddenError('You do not have permission to delete this project');
     }
 
-    await prisma.project.delete({
-      where: { id },
-    });
+    await prisma.project.delete({ where: { id } });
 
     const response: ApiResponse = {
       success: true,
       data: { message: 'Project deleted successfully' },
       timestamp: new Date().toISOString(),
     };
-
     res.json(response);
   } catch (error) {
     next(error);

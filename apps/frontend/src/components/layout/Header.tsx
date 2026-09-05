@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { User, Settings, LogOut, Shield } from 'lucide-react';
+import { ActiveOrgSwitcher } from '@/components/admin/ActiveOrgSwitcher';
 
 export function Header() {
   const navigate = useNavigate();
@@ -100,6 +101,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Renders only for platform admins; a no-op for everyone else. */}
+          <ActiveOrgSwitcher />
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

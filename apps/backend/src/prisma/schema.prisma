@@ -24,8 +24,10 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Password authentication
-  hashedPassword String?
+  // Passwords live on Account rows (providerId 'credential'), hashed by Better
+  // Auth. There is deliberately no password column here: a User.hashedPassword
+  // field existed once, nothing ever read it, and the seed writing to it meant
+  // no seeded account could sign in.
 
   // Role and permissions (user | admin)
   role          String    @default("user")
@@ -57,10 +59,21 @@ model Session {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Written by Better Auth's organization plugin. This is the tenant scope
+  // for the request: every access-control decision reads it. Without the
+  // column the plugin's setActive call fails and admins cannot scope.
+  activeOrganizationId String?
+
+  // Written by Better Auth's admin plugin when an admin impersonates a user.
+  // Its presence is what the ImpersonationBanner keys off.
+  impersonatedBy String?
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [activeOrganizationId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([activeOrganizationId])
   @@map("sessions")
 }
 
@@ -69,6 +82,13 @@ model Account {
   userId                String
   accountId             String
   providerId            String
+
+  // Required by Better Auth >= 1.7. For OAuth this is the provider's real
+  // issuer; for email/password it is the synthetic `local:credential`.
+  // Sign-in matches on (providerId, issuer, accountId) — all three — so a row
+  // without an issuer is invisible to the credential provider and the user is
+  // reported as not found even though the row exists and the hash is correct.
+  issuer                String
   accessToken           String?   @db.Text
   refreshToken          String?   @db.Text
   idToken               String?   @db.Text
@@ -82,8 +102,11 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, accountId])
+  // Better Auth's canonical uniqueness is (issuer, accountId): the same
+  // accountId can legitimately recur across issuers.
+  @@unique([issuer, accountId])
   @@index([userId])
+  @@index([providerId])
   @@map("accounts")
 }
 
@@ -118,14 +141,44 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Stripe customer for org-level billing, set at first checkout.
+  stripeCustomerId String? @unique
+
+  // Free-trial expiry. An org with `now < trialEndsAt` counts as active even
+  // with no Subscription row, which is what lets a new tenant use the product
+  // before entering a card. Null means "no trial" -- not "infinite trial".
+  trialEndsAt DateTime?
+
   members      OrganizationMember[]
   invitations  OrganizationInvitation[]
   projects     Project[]
   subscription Subscription?
   usageRecords UsageRecord[]
+  domains      OrganizationDomain[]
+  activeSessions Session[]
 
   @@index([slug])
+  @@index([stripeCustomerId])
   @@map("organizations")
+}
+
+/// Email domains that map to an organization. A user signing up with a
+/// matching address is auto-joined to that org, which is how tenants get
+/// populated without an invite for every employee. `domain` is globally
+/// unique: one domain cannot resolve to two tenants, or signup would have to
+/// guess which one the user meant.
+model OrganizationDomain {
+  id             String   @id @default(cuid())
+  organizationId String
+  domain         String   @unique
+  isPrimary      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, domain])
+  @@index([organizationId])
+  @@map("organization_domains")
 }
 
 model OrganizationMember {
