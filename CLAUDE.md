@@ -6,7 +6,9 @@ This file extends the global `~/.claude/CLAUDE.md`. See that file for general en
 
 ## Stack
 
-TypeScript (strict mode), Prisma ORM, PostgreSQL 16, Redis 7, Better Auth 1.5.6, Stripe billing, Docker Compose.
+TypeScript (strict mode), Prisma 6, PostgreSQL 16, Redis 7, Better Auth 1.7, Stripe billing, Docker Compose.
+
+Frontend: React 19, Vite 6, Vitest 4, Tailwind 4, react-router-dom 7, TanStack Query, Zustand.
 
 Monorepo with npm workspaces: `apps/backend`, `apps/frontend`, `packages/shared`.
 
@@ -73,7 +75,8 @@ All must exit 0. If there are pre-existing errors in files you did not touch, fl
 ## Code Style
 
 - **Prettier**: semi: true, singleQuote: true, trailingComma: all, printWidth: 100, tabWidth: 2
-- **ESLint**: root config extends typescript-eslint + prettier
+- **ESLint**: flat config at `eslint.config.mjs` (ESLint 9) covering all three workspaces. There is no `.eslintrc`, and `--ext` is not a valid flag.
+  - The frontend lints with `--max-warnings 0`, so a warning fails CI there. The backend does not.
 - **Naming**: camelCase for variables/functions, PascalCase for types/components, kebab-case for files
 - Avoid `any` — use `unknown` and narrow, or define proper types
 
@@ -117,10 +120,14 @@ Husky pre-commit hook runs Prettier via lint-staged on TS/JSON/MD files.
 
 ## Database and Prisma
 
-- Schema: `apps/backend/src/prisma/schema.prisma` (12 models) — **read it before any database work**
+- Schema: `apps/backend/src/prisma/schema.prisma` (13 models) — **read it before any database work**
+- Migrations: `apps/backend/src/prisma/migrations/` — starts from a baseline capturing the original schema
 - **Use Prisma's query builder exclusively** — never `prisma.$queryRaw` or raw SQL; it bypasses type safety and tenant scoping, and breaks on schema changes
 - Better Auth tables use `@@map("lowercase")` with `String @id @default(cuid())`
-- Models: User, Session, Account, Verification, Organization, OrganizationMember, OrganizationInvitation, Subscription, UsageRecord, AuditLog, Project, Task
+- Models: User, Session, Account, Verification, Organization, OrganizationDomain, OrganizationMember, OrganizationInvitation, Subscription, UsageRecord, AuditLog, Project, Task
+- `Account.issuer` is **required** by Better Auth ≥ 1.7. Sign-in matches on `(providerId, issuer, accountId)`; a row without it is invisible to the credential provider and the user is reported as "not found" even though the row and password hash are valid. Credential accounts use the synthetic issuer `local:credential`.
+- Passwords live on `Account.password`, hashed by Better Auth (scrypt). There is deliberately no password column on `User` — use `hashPassword` from `better-auth/crypto` if you ever need to write one directly, as `seed.ts` does.
+- Model naming deviates from Better Auth's defaults for two tables (`OrganizationMember`, `OrganizationInvitation`) via the plugin's `schema` option — see `docs/adrs/005-keep-explicit-organization-model-names.md`
 
 ```bash
 npm run db:generate       # Generate Prisma client
@@ -137,9 +144,12 @@ npm run db:studio         # Prisma Studio GUI
 ## Better Auth
 
 - Config: `apps/backend/src/config/auth.config.ts`
-- Frontend auth hooks: `apps/frontend/src/hooks/useAuth.ts`
+- Frontend auth state: `apps/frontend/src/contexts/AuthContext.tsx` (`@/hooks/useAuth` re-exports it)
 - Plugins: admin, organization
-- New users auto-banned (pending admin approval)
+- New users auto-banned (pending admin approval), **except** an email listed in `ADMIN_EMAILS`, which becomes an admin on signup. Without that bypass a fresh deployment has nobody able to approve anyone.
+- Signup auto-joins the organization owning the email's domain, if an `OrganizationDomain` row matches. The first user into an org becomes its `owner`.
+
+**Session state is read from the database, not the cookie cache.** `session.cookieCache` is enabled, but `requireAuth` re-reads `activeOrganizationId`, `impersonatedBy` and ban state from the session row. Do not "optimise away" that query — see `docs/adrs/004-session-state-read-from-database.md`.
 
 **Express middleware ordering is critical — do not change** (in `apps/backend/src/app.ts`):
 
@@ -208,10 +218,46 @@ packages/shared/
 - Auth: Better Auth with email/password, admin approval workflow, organizations
 - Monorepo: npm workspaces with shared types/validation package
 - State: TanStack Query for server data, Zustand for client state
-- Styling: Tailwind CSS 3.4 + shadcn/ui
-- Billing: Stripe subscriptions with usage metering
+- Styling: Tailwind CSS 4 + shadcn/ui — **CSS-first, there is no `tailwind.config.js`**; the theme lives in `apps/frontend/src/styles/globals.css` under `@theme`
+- Billing: Stripe subscriptions with usage metering, gated by `requireActiveSubscription`
 - Email: Postmark (test mode in dev)
 - CSRF: csrf-csrf middleware
+
+Decisions with lasting consequences are recorded in `docs/adrs/`. Read those before changing tenancy, billing enforcement, session handling or theming.
+
+---
+
+## Multi-Tenancy
+
+**Every tenant-scoped query must go through `apps/backend/src/services/access-control.service.ts`.** Do not query `organizationMember` directly in a controller — that is what produced three conflicting scoping rules in one file before this layer existed. `project.controller.ts` is the worked example to copy.
+
+```ts
+const ctx = ctxFromRequest(req);
+
+// Filter a list:
+const where = { ...(await orgScopeWhere(ctx)), status: 'active' };
+
+// Authorize one organization, or a role within it:
+await assertOrgAccess(ctx, organizationId);
+await assertOrgRole(ctx, organizationId, ['owner', 'admin']);
+```
+
+`getAccessibleOrgIds` returns `string[] | null`. **`null` means platform-wide (no filter) and is returned only for an unscoped system admin; an empty array means "sees nothing" and must still be applied as a filter.** Use the wrappers above rather than branching on the raw value — that is what keeps the sentinel out of a query builder. See `docs/adrs/001-centralized-tenant-access-control.md`.
+
+Platform admins can scope themselves into a single tenant (`POST /api/admin/session/active-org`), which sets `Session.activeOrganizationId`. That field is consulted **only** for admins — a regular user cannot widen their own scope with it.
+
+**Billing enforcement is separate from access control.** Pair `requireActiveSubscription()` with `requireAuth` on billable routes; it no-ops without `STRIPE_SECRET_KEY` and always passes platform admins. See `docs/adrs/002-subscription-paywall-middleware.md`.
+
+**Audit sensitive actions** with `logAdminAction` / `logAuthEvent` from `services/audit-log.service.ts`. Impersonation, bans and role changes already are.
+
+---
+
+## Theming
+
+- Light/dark/system via `apps/frontend/src/contexts/ThemeContext.tsx`; the toggle is in the header.
+- **Never hard-code palette colors** (`bg-gray-50`, `text-green-600`). They do not respond to the theme — a `bg-gray-50` page stays light in dark mode and `text-green-800` on `bg-green-100` becomes unreadable. Use the semantic tokens: `background`, `foreground`, `muted`, `card`, `border`, `primary`, `destructive`, `success`, `warning`, `info`.
+- `index.html` carries an inline pre-paint script that applies the stored theme before React mounts. Without it dark-mode users get a white flash on every load. Do not remove it.
+- `Layout` is mounted once as a route element rendering an `<Outlet/>`. Pages must **not** import and wrap themselves in it.
 
 ---
 
@@ -219,3 +265,4 @@ packages/shared/
 
 - Test users: `admin@example.com` / `Admin123!`, `user1@example.com` / `User123!`, `user2@example.com` / `User123!`
 - Test org: "Acme Corporation" with members
+- The seed writes credential `Account` rows using `hashPassword` from `better-auth/crypto`. Do not write password hashes any other way — an earlier version wrote bcrypt to a `User.hashedPassword` column that Better Auth never reads, so no seeded account could sign in.

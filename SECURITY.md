@@ -6,7 +6,7 @@ This document describes the security measures, configuration, and practices for 
 
 ### Authentication
 
-- **Library**: [better-auth](https://www.better-auth.com/) v1.5.6
+- **Library**: [better-auth](https://www.better-auth.com/) v1.7
 - **Password hashing**: bcrypt (handled internally by better-auth)
 - **Sessions**: Database-backed with configurable expiry (default 7 days)
 - **Email verification**: Required on signup

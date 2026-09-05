@@ -16,6 +16,10 @@ A production-ready, full-stack web application template built with modern techno
   - Organization creation and management
   - Team member invitations with email notifications
   - Role-based permissions (Owner, Admin, Member)
+  - Centralized tenant scoping — one access-control layer every query goes through
+  - Email-domain auto-join: signups land in the organization owning their domain
+  - Platform admins can scope into a single tenant for support, or view across all
+  - User impersonation with a persistent banner and a full audit trail
 
 - **User Management**
   - User profiles
@@ -50,15 +54,15 @@ A production-ready, full-stack web application template built with modern techno
 
 ## Tech Stack
 
-| Layer              | Technology                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| **Frontend**       | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui, React Router, TanStack Query, Zustand |
-| **Backend**        | Node.js 22, Express, TypeScript, Prisma, Better Auth 1.5.6, Winston, Zod                   |
-| **Database**       | PostgreSQL 16                                                                              |
-| **Cache**          | Redis 7                                                                                    |
-| **Email**          | Postmark                                                                                   |
-| **Testing**        | Vitest, React Testing Library, Supertest                                                   |
-| **Infrastructure** | Docker, Docker Compose, nginx                                                              |
+| Layer              | Technology                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| **Frontend**       | React 19, Vite 6, TypeScript, Tailwind CSS 4, shadcn/ui, React Router 7, TanStack Query, Zustand |
+| **Backend**        | Node.js 22, Express, TypeScript, Prisma 6, Better Auth 1.7, Winston, Zod                         |
+| **Database**       | PostgreSQL 16                                                                                    |
+| **Cache**          | Redis 7                                                                                          |
+| **Email**          | Postmark                                                                                         |
+| **Testing**        | Vitest, React Testing Library, Supertest                                                         |
+| **Infrastructure** | Docker, Docker Compose, nginx                                                                    |
 
 ## Quick Start
 
@@ -130,25 +134,30 @@ webapp_template/
 ├── apps/
 │   ├── backend/               # Express.js API server
 │   │   ├── src/
-│   │   │   ├── config/        # Auth, database, email config
+│   │   │   ├── config/        # Auth, database, email, env validation
 │   │   │   ├── controllers/   # Route controllers
-│   │   │   ├── middleware/     # Auth, error, validation middleware
+│   │   │   ├── middleware/    # Auth, error, validation, subscription
 │   │   │   ├── routes/        # API route definitions
+│   │   │   ├── services/      # Access control, subscription, audit log
 │   │   │   ├── prisma/        # Schema, migrations, seed
 │   │   │   └── utils/         # Logger, error classes
 │   │   └── Dockerfile         # Multi-stage production build
 │   │
 │   └── frontend/              # React SPA
 │       ├── src/
-│       │   ├── components/    # UI, auth, layout components
+│       │   ├── components/    # UI, auth, layout, admin components
+│       │   ├── contexts/      # Auth and theme providers
 │       │   ├── pages/         # Auth, dashboard, admin, org pages
 │       │   ├── hooks/         # useAuth and custom hooks
 │       │   ├── lib/           # API client, utilities
-│       │   └── styles/        # Global CSS and theming
+│       │   └── styles/        # Tailwind 4 theme (no tailwind.config.js)
 │       └── Dockerfile         # Multi-stage build with nginx
 │
 ├── packages/
 │   └── shared/                # Shared types and Zod validation
+│
+├── docs/
+│   └── adrs/                  # Architecture decision records
 │
 ├── docker/
 │   ├── docker-compose.yml     # Full-stack production compose
@@ -242,6 +251,14 @@ webapp_template/
 | ------ | ---------------------- | ----------------- |
 | GET    | `/api/metering/:orgId` | Get usage summary |
 
+### Admin (platform administrators only)
+
+| Method | Path                            | Description                              |
+| ------ | ------------------------------- | ---------------------------------------- |
+| GET    | `/api/admin/organizations`      | List all organizations (cross-tenant)    |
+| POST   | `/api/admin/session/active-org` | Scope this session to one organization   |
+| DELETE | `/api/admin/session/active-org` | Clear the scope; return to platform-wide |
+
 ### Organizations
 
 | Method | Path                                       | Description               |
@@ -263,6 +280,70 @@ webapp_template/
 4. **Sign In** — Once approved, user enters credentials. Session created with secure HTTP-only cookie.
 5. **Password Reset** — User requests reset email via `/forgot-password`. Clicks link to `/reset-password?token=xxx`. Submits new password.
 6. **Protected Routes** — Frontend checks auth status. Unauthenticated users redirected to login. Banned (unapproved) users redirected to login. Admin routes check for admin role.
+
+Ban state and tenant scope are re-read from the database on every request rather
+than taken from Better Auth's session cookie cache, so a ban, a session
+revocation or a scope change takes effect immediately instead of up to five
+minutes later — see
+[ADR-004](docs/adrs/004-session-state-read-from-database.md).
+
+A signup whose email domain matches an `OrganizationDomain` is auto-joined to
+that organization at step 1, before approval.
+
+## Multi-Tenancy
+
+Organizations are the tenant boundary. Every tenant-scoped query resolves its
+scope through `apps/backend/src/services/access-control.service.ts` rather than
+querying memberships inline — see
+[ADR-001](docs/adrs/001-centralized-tenant-access-control.md).
+
+**Regular users** see the organizations they hold a membership in. They cannot
+widen that by any request parameter.
+
+**Platform admins** (`User.role === 'admin'`) see across all tenants by default,
+and can scope themselves into one via the header's scope switcher. That writes
+`Session.activeOrganizationId`, and while set the admin sees only that tenant —
+useful for reproducing a customer's view during support. The action is
+audit-logged.
+
+**Impersonation** lets an admin act as a specific user. A persistent banner
+makes it unmissable, and both the start and the stop are audit-logged with the
+acting admin and the target, because the request log alone cannot tell them
+apart.
+
+**Domain auto-join.** An `OrganizationDomain` row maps an email domain to an
+organization; a signup from a matching address joins it automatically, and the
+first user into an organization becomes its owner. Note the trust boundary this
+creates: anyone who can receive mail at a claimed domain will join that tenant
+(still subject to admin approval). Only add domains you control.
+
+**Billing entitlement** is enforced separately from access control, by
+`requireActiveSubscription()` — see
+[ADR-002](docs/adrs/002-subscription-paywall-middleware.md). It no-ops when
+`STRIPE_SECRET_KEY` is unset, so the template runs fully without Stripe.
+
+## Bootstrapping the First Admin
+
+Every new user is created banned, pending admin approval — which on a fresh
+deployment means nobody can approve anybody. Set `ADMIN_EMAILS` to a
+comma-separated list; a signup from a listed address becomes an admin
+immediately, with no approval required.
+
+```bash
+ADMIN_EMAILS=you@example.com,cofounder@example.com
+```
+
+## Architecture Decisions
+
+Decisions with lasting consequences are recorded in [`docs/adrs/`](docs/adrs/):
+
+| ADR                                                            | Decision                                                      |
+| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| [001](docs/adrs/001-centralized-tenant-access-control.md)      | Centralize tenant access control behind one service           |
+| [002](docs/adrs/002-subscription-paywall-middleware.md)        | Enforce billing entitlement as route middleware               |
+| [003](docs/adrs/003-tailwind-4-css-first-theming.md)           | Configure Tailwind 4 in CSS, palette in oklch                 |
+| [004](docs/adrs/004-session-state-read-from-database.md)       | Read session scope and ban state from the database            |
+| [005](docs/adrs/005-keep-explicit-organization-model-names.md) | Keep explicit `OrganizationMember` / `OrganizationInvitation` |
 
 ## Docker Architecture
 
@@ -309,26 +390,28 @@ docker compose -f docker/docker-compose.yml --profile tools up pgadmin -d
 
 ### Backend (`apps/backend/.env`)
 
-| Variable                          | Default                 | Description                            |
-| --------------------------------- | ----------------------- | -------------------------------------- |
-| `PORT`                            | `3001`                  | Server port                            |
-| `DATABASE_URL`                    | —                       | PostgreSQL connection string           |
-| `REDIS_URL`                       | —                       | Redis connection string                |
-| `BETTER_AUTH_SECRET`              | —                       | Auth secret (min 32 chars)             |
-| `BETTER_AUTH_URL`                 | `http://localhost:3001` | Auth server URL                        |
-| `FRONTEND_URL`                    | `http://localhost:5173` | Frontend URL (for CORS, emails)        |
-| `POSTMARK_API_KEY`                | —                       | Postmark API key                       |
-| `EMAIL_TEST_MODE`                 | `true`                  | Log emails instead of sending          |
-| `CORS_ORIGIN`                     | `http://localhost:5173` | Allowed CORS origins                   |
-| `SESSION_COOKIE_SECURE`           | `false`                 | Secure cookies (set `true` for HTTPS)  |
-| `SESSION_EXPIRY_DAYS`             | `7`                     | Session duration                       |
-| `LOG_LEVEL`                       | `info`                  | Winston log level                      |
-| `STRIPE_SECRET_KEY`               | —                       | Stripe secret key (test mode for dev)  |
-| `STRIPE_WEBHOOK_SECRET`           | —                       | Stripe webhook signing secret          |
-| `STRIPE_PRICE_PRO_MONTHLY`        | —                       | Stripe Price ID for Pro monthly        |
-| `STRIPE_PRICE_PRO_YEARLY`         | —                       | Stripe Price ID for Pro yearly         |
-| `STRIPE_PRICE_ENTERPRISE_MONTHLY` | —                       | Stripe Price ID for Enterprise monthly |
-| `STRIPE_PRICE_ENTERPRISE_YEARLY`  | —                       | Stripe Price ID for Enterprise yearly  |
+| Variable                          | Default                 | Description                                                                                                   |
+| --------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `PORT`                            | `3001`                  | Server port                                                                                                   |
+| `DATABASE_URL`                    | —                       | PostgreSQL connection string                                                                                  |
+| `REDIS_URL`                       | —                       | Redis connection string                                                                                       |
+| `BETTER_AUTH_SECRET`              | —                       | Auth secret (min 32 chars)                                                                                    |
+| `BETTER_AUTH_URL`                 | `http://localhost:3001` | Auth server URL                                                                                               |
+| `FRONTEND_URL`                    | `http://localhost:5173` | Frontend URL (for CORS, emails)                                                                               |
+| `POSTMARK_API_KEY`                | —                       | Postmark API key                                                                                              |
+| `EMAIL_TEST_MODE`                 | `true`                  | Log emails instead of sending                                                                                 |
+| `CORS_ORIGIN`                     | `http://localhost:5173` | Allowed CORS origins                                                                                          |
+| `SESSION_COOKIE_SECURE`           | `false`                 | Secure cookies (set `true` for HTTPS)                                                                         |
+| `SESSION_EXPIRY_DAYS`             | `7`                     | Session duration                                                                                              |
+| `LOG_LEVEL`                       | `info`                  | Winston log level                                                                                             |
+| `ADMIN_EMAILS`                    | —                       | Comma-separated bootstrap admin allow-list — a signup from a listed address becomes an admin without approval |
+| `TRIAL_PERIOD_DAYS`               | `14`                    | Free-trial length applied to new organizations                                                                |
+| `STRIPE_SECRET_KEY`               | —                       | Stripe secret key (test mode for dev)                                                                         |
+| `STRIPE_WEBHOOK_SECRET`           | —                       | Stripe webhook signing secret                                                                                 |
+| `STRIPE_PRICE_PRO_MONTHLY`        | —                       | Stripe Price ID for Pro monthly                                                                               |
+| `STRIPE_PRICE_PRO_YEARLY`         | —                       | Stripe Price ID for Pro yearly                                                                                |
+| `STRIPE_PRICE_ENTERPRISE_MONTHLY` | —                       | Stripe Price ID for Enterprise monthly                                                                        |
+| `STRIPE_PRICE_ENTERPRISE_YEARLY`  | —                       | Stripe Price ID for Enterprise yearly                                                                         |
 
 ### Frontend (`apps/frontend/.env`)
 
