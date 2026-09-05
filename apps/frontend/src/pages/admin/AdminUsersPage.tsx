@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
 import { authClient } from '@/lib/auth-client';
 import { userAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -207,7 +206,7 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
@@ -220,7 +219,7 @@ export default function AdminUsersPage() {
             <TabsTrigger value="pending" className="relative">
               Pending Approval
               {pendingCount > 0 && (
-                <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-medium text-white">
+                <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-medium text-warning-foreground">
                   {pendingCount}
                 </span>
               )}
@@ -563,6 +562,6 @@ export default function AdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   );
 }

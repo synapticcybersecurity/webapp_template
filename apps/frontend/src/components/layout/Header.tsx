@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { User, Settings, LogOut, Shield } from 'lucide-react';
 import { ActiveOrgSwitcher } from '@/components/admin/ActiveOrgSwitcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function Header() {
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ export function Header() {
               >
                 Admin
                 {pendingCount > 0 && (
-                  <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-xs font-medium text-white">
+                  <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs font-medium text-warning-foreground">
                     {pendingCount}
                   </span>
                 )}
@@ -103,6 +104,7 @@ export function Header() {
         <div className="flex items-center gap-4">
           {/* Renders only for platform admins; a no-op for everyone else. */}
           <ActiveOrgSwitcher />
+          <ThemeToggle />
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

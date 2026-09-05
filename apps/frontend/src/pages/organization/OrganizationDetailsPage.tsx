@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Layout } from '@/components/layout/Layout';
 import { authClient } from '@/lib/auth-client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -81,24 +80,24 @@ export default function OrganizationDetailsPage() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (error || !organization) {
     return (
-      <Layout>
+      <>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             {error instanceof Error ? error.message : 'Failed to load organization'}
           </AlertDescription>
         </Alert>
-      </Layout>
+      </>
     );
   }
 
@@ -109,7 +108,7 @@ export default function OrganizationDetailsPage() {
   const isOwnerOrAdmin = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -271,6 +270,6 @@ export default function OrganizationDetailsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
+    </>
   );
 }

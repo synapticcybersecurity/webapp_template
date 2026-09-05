@@ -1,5 +1,4 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Layout } from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Building2, FolderKanban, Activity } from 'lucide-react';
 
@@ -38,7 +37,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -114,7 +113,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <button className="flex w-full items-center justify-start rounded-lg border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
+                <button className="flex w-full items-center justify-start rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted">
                   <FolderKanban className="mr-3 h-5 w-5 text-primary" />
                   <div>
                     <div className="text-sm font-medium">Create Project</div>
@@ -122,7 +121,7 @@ export default function DashboardPage() {
                   </div>
                 </button>
 
-                <button className="flex w-full items-center justify-start rounded-lg border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
+                <button className="flex w-full items-center justify-start rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted">
                   <Users className="mr-3 h-5 w-5 text-primary" />
                   <div>
                     <div className="text-sm font-medium">Invite Team Member</div>
@@ -130,7 +129,7 @@ export default function DashboardPage() {
                   </div>
                 </button>
 
-                <button className="flex w-full items-center justify-start rounded-lg border border-gray-200 p-3 text-left transition-colors hover:bg-gray-50">
+                <button className="flex w-full items-center justify-start rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted">
                   <Building2 className="mr-3 h-5 w-5 text-primary" />
                   <div>
                     <div className="text-sm font-medium">View Organizations</div>
@@ -142,6 +141,6 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

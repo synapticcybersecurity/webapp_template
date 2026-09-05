@@ -58,11 +58,11 @@ export default function LoginPage() {
 
   if (showPendingApproval) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Clock className="h-6 w-6 text-amber-500" />
+              <Clock className="h-6 w-6 text-warning" />
               <CardTitle className="text-2xl font-bold">Account Pending Approval</CardTitle>
             </div>
             <CardDescription>Your account is waiting for administrator review</CardDescription>
@@ -95,7 +95,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
@@ -148,7 +148,7 @@ export default function LoginPage() {
               Sign in
             </Button>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{' '}
               <Link to="/signup" className="text-primary hover:underline">
                 Sign up

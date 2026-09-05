@@ -1,8 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* Tailwind 4 is configured here, in CSS — there is no tailwind.config.js.
-   `darkMode: ['class']` from the old JS config becomes this variant. */
+/* Tailwind 4 is configured here, in CSS — there is no tailwind.config.js. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* The v3 config centred the container with 2rem of padding and capped it at
@@ -43,61 +42,92 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Semantic status colors. Every app needs these and hard-coding
+     `text-green-600` at call sites means they can never be themed, and go
+     unreadable in dark mode. */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Palette values are unchanged from the Tailwind 3 theme — same hsl triplets,
-   now written as complete colors instead of bare channels wrapped in
-   hsl(var(--x)) at every use site. Story #28 replaces these with the
-   oklch palette. */
+/* Palette in oklch, which keeps lightness perceptually even across hues — the
+   reason the dark ramp below can be derived by moving L and C rather than
+   hand-tuning each color until it looks right.
+   Neutral slate surfaces with a blue primary: this is a template, so it stays
+   brand-neutral for the next project to recolor by editing only this block. */
 :root {
   --radius: 0.5rem;
 
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(222.2 84% 4.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222.2 84% 4.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222.2 84% 4.9%);
-  --primary: hsl(221.2 83.2% 53.3%);
-  --primary-foreground: hsl(210 40% 98%);
-  --secondary: hsl(210 40% 96.1%);
-  --secondary-foreground: hsl(222.2 47.4% 11.2%);
-  --muted: hsl(210 40% 96.1%);
-  --muted-foreground: hsl(215.4 16.3% 46.9%);
-  --accent: hsl(210 40% 96.1%);
-  --accent-foreground: hsl(222.2 47.4% 11.2%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(214.3 31.8% 91.4%);
-  --input: hsl(214.3 31.8% 91.4%);
-  --ring: hsl(221.2 83.2% 53.3%);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.208 0.042 265.755);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.208 0.042 265.755);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.546 0.245 262.881);
+  --primary-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.279 0.041 260.031);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.279 0.041 260.031);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.546 0.245 262.881);
+
+  --success: oklch(0.596 0.145 163.225);
+  --success-foreground: oklch(0.984 0.003 247.858);
+  --warning: oklch(0.681 0.162 75.834);
+  --warning-foreground: oklch(0.208 0.042 265.755);
+  --info: oklch(0.588 0.158 241.966);
+  --info-foreground: oklch(0.984 0.003 247.858);
 
   color-scheme: light;
 }
 
 .dark {
-  --background: hsl(222.2 84% 4.9%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(222.2 84% 4.9%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(222.2 84% 4.9%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(217.2 91.2% 59.8%);
-  --primary-foreground: hsl(222.2 47.4% 11.2%);
-  --secondary: hsl(217.2 32.6% 17.5%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(217.2 32.6% 17.5%);
-  --muted-foreground: hsl(215 20.2% 65.1%);
-  --accent: hsl(217.2 32.6% 17.5%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217.2 32.6% 17.5%);
-  --input: hsl(217.2 32.6% 17.5%);
-  --ring: hsl(224.3 76.3% 48%);
+  --background: oklch(0.208 0.042 265.755);
+  /* Cards sit *above* the background in dark mode, so they lighten rather than
+     darken — the light-mode relationship inverts. A dark theme that keeps
+     card == background loses all surface hierarchy. */
+  --card: oklch(0.279 0.041 260.031);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.279 0.041 260.031);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  /* Lighter and less saturated than the light-mode primary: the same blue on a
+     dark ground is too low-contrast to read as interactive. */
+  --primary: oklch(0.707 0.165 254.624);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.372 0.044 257.287);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(0.372 0.044 257.287);
+  --input: oklch(0.372 0.044 257.287);
+  --ring: oklch(0.707 0.165 254.624);
+
+  --success: oklch(0.696 0.17 162.48);
+  --success-foreground: oklch(0.208 0.042 265.755);
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.208 0.042 265.755);
+  --info: oklch(0.685 0.169 237.323);
+  --info-foreground: oklch(0.208 0.042 265.755);
 
   color-scheme: dark;
 }
@@ -106,8 +136,49 @@
   * {
     border-color: var(--border);
   }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
+    margin: 0;
     background-color: var(--background);
     color: var(--foreground);
+    font-family:
+      ui-sans-serif,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Make focus rings consistent and always visible for keyboard users. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect a user's reduced-motion preference across every animation,
+   including the ones tw-animate-css introduces. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

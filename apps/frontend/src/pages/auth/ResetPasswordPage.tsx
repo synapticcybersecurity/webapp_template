@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Invalid reset link</CardTitle>
@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
 
   if (resetMutation.isSuccess) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Password reset successful</CardTitle>
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
   const passwordMismatch = confirmPassword.length > 0 && newPassword !== confirmPassword;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4 py-12">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Reset your password</CardTitle>

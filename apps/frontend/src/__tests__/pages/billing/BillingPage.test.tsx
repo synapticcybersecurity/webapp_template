@@ -22,10 +22,6 @@ vi.mock('@/lib/api', () => ({
   billingAPI: mockBillingAPI,
 }));
 
-vi.mock('@/components/layout/Layout', () => ({
-  Layout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
 describe('BillingPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
