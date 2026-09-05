@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +18,38 @@ import { Loader2, AlertCircle, Clock } from 'lucide-react';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { isAuthenticated } = useAuth();
+
+  /**
+   * Redirect once the session store reports us authenticated.
+   *
+   * Navigating straight after `signIn.email` resolves does not work: the call
+   * resolving means the server issued the cookie, not that this client's
+   * `useSession` store knows about it. Better Auth notifies that store
+   * asynchronously, so an immediate `navigate('/dashboard')` hit ProtectedRoute
+   * while it still read "not authenticated" and got bounced right back here —
+   * a successful login looked like the button did nothing.
+   *
+   * Calling `getSession()` does not help either; it is not one of the paths
+   * that notifies the session signal. Waiting for the store is the fix.
+   *
+   * This also covers an already-signed-in user opening /login directly.
+   */
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Honour ?redirect= so an expired session returns the user to the page they
+    // were actually on — the API client sets it on a 401. Relative paths only:
+    // accepting an absolute URL here would make this an open redirect.
+    const requested = searchParams.get('redirect');
+    const destination =
+      requested && requested.startsWith('/') && !requested.startsWith('//')
+        ? requested
+        : '/dashboard';
+
+    navigate(destination, { replace: true });
+  }, [isAuthenticated, navigate, searchParams]);
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPendingApproval, setShowPendingApproval] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,9 +79,8 @@ export default function LoginPage() {
       } else {
         setError(signInError.message || 'Failed to sign in. Please check your credentials.');
       }
-    } else {
-      navigate('/dashboard');
     }
+    // On success we do NOT navigate here — see the effect below.
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

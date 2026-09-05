@@ -24,9 +24,13 @@ vi.mock('@/lib/auth-client', () => ({
   },
 }));
 
+const mockUseAuth = vi.fn();
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => mockUseAuth() }));
+
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({ isAuthenticated: false });
   });
 
   it('should render email and password fields', () => {
@@ -72,5 +76,49 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByText(/pending approval/i)).toBeInTheDocument();
+  });
+});
+
+describe('LoginPage redirect', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('does not navigate while unauthenticated', () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false });
+    renderWithProviders(<LoginPage />);
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to the dashboard once the session store reports authenticated', () => {
+    // The regression this guards: navigating immediately after signIn.email
+    // resolved raced Better Auth's asynchronous session-store update, so
+    // ProtectedRoute read a stale "not authenticated" and bounced the user
+    // straight back to /login. A successful login looked like nothing
+    // happened. The redirect must be driven by the store, not the call.
+    mockUseAuth.mockReturnValue({ isAuthenticated: true });
+    renderWithProviders(<LoginPage />);
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
+  });
+
+  it('honours a relative ?redirect= target', () => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: true });
+    renderWithProviders(<LoginPage />, {
+      routerProps: { initialEntries: ['/login?redirect=%2Forganizations'] },
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/organizations', { replace: true });
+  });
+
+  it.each([
+    ['https://evil.example.com', 'absolute URL'],
+    ['//evil.example.com', 'protocol-relative URL'],
+  ])('ignores %s (%s) and falls back to the dashboard', (target) => {
+    // Following an attacker-supplied absolute target here would make the login
+    // page an open redirect.
+    mockUseAuth.mockReturnValue({ isAuthenticated: true });
+    renderWithProviders(<LoginPage />, {
+      routerProps: { initialEntries: [`/login?redirect=${encodeURIComponent(target)}`] },
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
   });
 });

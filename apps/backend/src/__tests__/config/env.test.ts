@@ -115,3 +115,34 @@ describe('validateEnv', () => {
     });
   });
 });
+
+describe('auth rate limiting', () => {
+  it('does not throttle session reads at a rate normal browsing exceeds', async () => {
+    // Regression guard. The default applies to every /api/auth/* path,
+    // including get-session, which the client calls on essentially every
+    // protected route render. At the previous max of 10/minute — keyed by IP,
+    // so shared across everyone behind one NAT — ordinary navigation exhausted
+    // the budget, get-session began returning 429, the client read that as
+    // "no session", and the user was silently bounced to /login.
+    const { auth } = await import('../../config/auth.config.js');
+    const rateLimit = (auth.options as { rateLimit?: { max?: number; window?: number } }).rateLimit;
+
+    expect(rateLimit?.max ?? 0).toBeGreaterThanOrEqual(60);
+  });
+
+  it('keeps credential endpoints strictly limited', async () => {
+    // Raising the default must not relax brute-force protection on the paths
+    // where it actually matters.
+    const { auth } = await import('../../config/auth.config.js');
+    const rules = (
+      auth.options as {
+        rateLimit?: { customRules?: Record<string, { max?: number; window?: number }> };
+      }
+    ).rateLimit?.customRules;
+
+    expect(rules?.['/sign-in/email']?.max).toBeLessThanOrEqual(10);
+    expect(rules?.['/sign-up/email']?.max).toBeLessThanOrEqual(10);
+    expect(rules?.['/forget-password']?.max).toBeLessThanOrEqual(10);
+    expect(rules?.['/reset-password']?.max).toBeLessThanOrEqual(10);
+  });
+});

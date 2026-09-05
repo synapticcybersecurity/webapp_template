@@ -111,11 +111,35 @@ export const auth = betterAuth({
     },
   },
 
-  // Rate limiting
+  /**
+   * Rate limiting.
+   *
+   * The default applies to every `/api/auth/*` endpoint, and that includes
+   * `get-session`, which the client calls on essentially every protected route
+   * render. A blanket 10/minute therefore throttled ordinary navigation: once
+   * exhausted, `get-session` returned 429, the client read the failed response
+   * as "no session", and ProtectedRoute bounced the user to /login with no
+   * error shown. It looked like a random logout, or like the sign-in button
+   * doing nothing.
+   *
+   * The limit is keyed by IP rather than by user, so a shared office NAT made
+   * that budget collective.
+   *
+   * So: a workable default for session reads, and genuinely strict limits on
+   * the credential endpoints, which is where brute-force protection actually
+   * matters. Signup and password reset are *tighter* than before (5/min, down
+   * from 10).
+   */
   rateLimit: {
     enabled: true,
     window: 60, // 1 minute
-    max: 10, // 10 requests per window
+    max: 100,
+    customRules: {
+      '/sign-in/email': { window: 60, max: 10 },
+      '/sign-up/email': { window: 60, max: 5 },
+      '/forget-password': { window: 60, max: 5 },
+      '/reset-password': { window: 60, max: 5 },
+    },
   },
 
   // Database hooks: admin approval workflow and tenant auto-join
