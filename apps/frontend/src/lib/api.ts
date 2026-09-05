@@ -21,6 +21,16 @@ export const api = axios.create({
 // CSRF token cache
 let csrfToken: string | null = null;
 
+// Guards against a burst of concurrent failures each triggering their own
+// navigation; the first one wins and the rest fall through quietly.
+let isRedirecting = false;
+
+/**
+ * Pages that stay reachable without an active subscription, because they are
+ * where a paywalled user goes to resolve it.
+ */
+const PAYWALL_EXEMPT_PATHS = ['/pricing', '/billing', '/login', '/signup', '/organizations'];
+
 async function fetchCsrfToken(): Promise<string> {
   const response = await axios.get(`${API_URL}/api/csrf-token`, {
     withCredentials: true,
@@ -50,11 +60,29 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const currentPath = window.location.pathname;
+
     if (error.response?.status === 401) {
-      const currentPath = window.location.pathname;
-      if (currentPath !== '/login' && currentPath !== '/signup') {
-        window.location.href = '/login';
+      if (!isRedirecting && currentPath !== '/login' && currentPath !== '/signup') {
+        isRedirecting = true;
+        // Preserve where they were so login can send them back.
+        const redirect = encodeURIComponent(currentPath + window.location.search);
+        window.location.assign(`/login?redirect=${redirect}`);
       }
+    }
+
+    // Paywall, not a permission failure: the session is valid but the org has
+    // no active subscription and no live trial. Send them somewhere they can
+    // actually fix it, unless they are already on such a page -- redirecting
+    // /pricing to /pricing would loop.
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.error?.code === 'SUBSCRIPTION_REQUIRED' &&
+      !isRedirecting &&
+      !PAYWALL_EXEMPT_PATHS.some((path) => currentPath.startsWith(path))
+    ) {
+      isRedirecting = true;
+      window.location.assign('/pricing?reason=subscription_required');
     }
 
     // Refresh CSRF token and retry on CSRF validation failure
@@ -87,6 +115,14 @@ export const billingAPI = {
   createPortal: (orgId: string) => api.post(`/api/billing/${orgId}/portal`),
   getInvoices: (orgId: string, limit?: number) =>
     api.get(`/api/billing/${orgId}/invoices`, { params: { limit } }),
+};
+
+export const adminAPI = {
+  listOrganizations: (search?: string) =>
+    api.get('/api/admin/organizations', { params: search ? { search } : undefined }),
+  setActiveOrganization: (organizationId: string) =>
+    api.post('/api/admin/session/active-org', { organizationId }),
+  clearActiveOrganization: () => api.delete('/api/admin/session/active-org'),
 };
 
 export const meteringAPI = {

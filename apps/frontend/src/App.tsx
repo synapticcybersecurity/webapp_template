@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -29,35 +30,37 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
 
-          {/* Public routes (pricing visible to all) */}
-          <Route path="/pricing" element={<PricingPage />} />
+            {/* Public routes (pricing visible to all) */}
+            <Route path="/pricing" element={<PricingPage />} />
 
-          {/* Protected routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/organizations" element={<OrganizationListPage />} />
-            <Route path="/organizations/:id" element={<OrganizationDetailsPage />} />
-            <Route path="/organizations/:orgId/billing" element={<BillingPage />} />
-          </Route>
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/organizations" element={<OrganizationListPage />} />
+              <Route path="/organizations/:id" element={<OrganizationDetailsPage />} />
+              <Route path="/organizations/:orgId/billing" element={<BillingPage />} />
+            </Route>
 
-          {/* Admin routes */}
-          <Route element={<ProtectedRoute requireAdmin />}>
-            <Route path="/admin/users" element={<AdminUsersPage />} />
-          </Route>
+            {/* Admin routes */}
+            <Route element={<ProtectedRoute requireAdmin />}>
+              <Route path="/admin/users" element={<AdminUsersPage />} />
+            </Route>
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

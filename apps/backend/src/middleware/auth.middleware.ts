@@ -28,6 +28,10 @@ declare global {
         session: {
           id: string;
           expiresAt: Date;
+          /** Tenant the request is scoped to; null means unscoped. */
+          activeOrganizationId: string | null;
+          /** Admin user id when this session is an impersonation, else null. */
+          impersonatedBy: string | null;
         };
       };
     }
@@ -47,15 +51,34 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       throw new UnauthorizedError('Authentication required');
     }
 
-    // Check if user is banned by querying current state from database
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { banned: true, banReason: true, banExpires: true },
+    // Read the live session row, and the user's ban state through it, in one
+    // query.
+    //
+    // Both halves must come from the database, not from the object Better Auth
+    // just returned. `session.cookieCache` serves a signed snapshot of the
+    // session for up to five minutes, so a cached session reports whatever
+    // scope and ban state were true when the cookie was minted. For the ban
+    // check that means a banned user keeps working for the rest of the window;
+    // for activeOrganizationId it means an admin who switches tenant scope
+    // keeps reading the previous tenant's data, silently, until the cache
+    // expires. Neither is acceptable for a security boundary, and this costs
+    // no more than the ban lookup it replaces.
+    const sessionRecord = await prisma.session.findUnique({
+      where: { id: session.session.id },
+      select: {
+        activeOrganizationId: true,
+        impersonatedBy: true,
+        user: { select: { banned: true, banReason: true, banExpires: true } },
+      },
     });
 
-    if (!user) {
-      throw new UnauthorizedError('User not found');
+    if (!sessionRecord?.user) {
+      // The session was revoked (or the user deleted) since the cookie was
+      // minted — treat it as unauthenticated rather than trusting the cache.
+      throw new UnauthorizedError('Session is no longer valid');
     }
+
+    const user = sessionRecord.user;
 
     if (user.banned) {
       // Check if ban has expired (support temporary bans)
@@ -91,6 +114,9 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       session: {
         id: session.session.id,
         expiresAt: new Date(session.session.expiresAt),
+        // From the database row above, deliberately — see the comment there.
+        activeOrganizationId: sessionRecord.activeOrganizationId,
+        impersonatedBy: sessionRecord.impersonatedBy,
       },
     };
 

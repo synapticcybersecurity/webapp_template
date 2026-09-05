@@ -24,6 +24,7 @@ import userRoutes from './routes/user.routes.js';
 import projectRoutes from './routes/project.routes.js';
 import billingRoutes from './routes/billing.routes.js';
 import meteringRoutes from './routes/metering.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -246,6 +247,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/metering', meteringRoutes);
+app.use('/api/admin', adminRoutes);
 
 // =============================================================================
 // Error Handling

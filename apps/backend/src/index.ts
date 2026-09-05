@@ -3,9 +3,20 @@
  * Imports configured app and starts the server
  */
 
-import app from './app.js';
-import { connectRedis } from './config/redis.js';
-import { logger } from './utils/logger.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// Validate before importing the app: app.ts pulls in auth.config.ts, which
+// reads BETTER_AUTH_SECRET at module scope. Checking afterwards would mean the
+// process had already exited with a less useful message.
+import { validateEnv } from './config/env.js';
+
+validateEnv();
+
+const { default: app } = await import('./app.js');
+const { connectRedis } = await import('./config/redis.js');
+const { logger } = await import('./utils/logger.js');
 
 const PORT = process.env.PORT || 3001;
 
