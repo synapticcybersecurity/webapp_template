@@ -27,16 +27,17 @@ export default function VerifyEmailPage() {
     },
   });
 
+  // Destructured so the effect can list honest dependencies. `mutate` is
+  // referentially stable in React Query v5, and the guard below still blocks
+  // re-entry once the mutation has started, so the extra renders this effect
+  // now wakes on cannot fire a second request.
+  const { mutate: verify, isSuccess, isPending, isError } = verifyMutation;
+
   useEffect(() => {
-    if (
-      token &&
-      !verifyMutation.isSuccess &&
-      !verifyMutation.isPending &&
-      !verifyMutation.isError
-    ) {
-      verifyMutation.mutate(token);
+    if (token && !isSuccess && !isPending && !isError) {
+      verify(token);
     }
-  }, [token]);
+  }, [token, verify, isSuccess, isPending, isError]);
 
   // No token — show a "check your email" message
   if (!token) {

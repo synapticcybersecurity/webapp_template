@@ -21,9 +21,7 @@ const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL || 'http://localhost:3001';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const SESSION_COOKIE_SECURE = process.env.SESSION_COOKIE_SECURE === 'true';
 const SESSION_COOKIE_SAME_SITE = (process.env.SESSION_COOKIE_SAME_SITE || 'lax') as
-  | 'lax'
-  | 'strict'
-  | 'none';
+  'lax' | 'strict' | 'none';
 const SESSION_EXPIRY_DAYS = parseInt(process.env.SESSION_EXPIRY_DAYS || '7');
 
 if (!BETTER_AUTH_SECRET || BETTER_AUTH_SECRET.length < 32) {
