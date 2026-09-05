@@ -8,12 +8,7 @@ export type BillingPlan = 'free' | 'pro' | 'enterprise';
 export type BillingInterval = 'monthly' | 'yearly';
 
 export type SubscriptionStatus =
-  | 'active'
-  | 'trialing'
-  | 'past_due'
-  | 'canceled'
-  | 'unpaid'
-  | 'inactive';
+  'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | 'inactive';
 
 export interface Subscription {
   id: string;

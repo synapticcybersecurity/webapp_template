@@ -194,13 +194,14 @@ packages/shared/
 ```
 
 **Ports:**
-| Service | Port |
-|-----------|------|
+
+| Service  | Port |
+| -------- | ---- |
 | Frontend | 5173 |
-| Backend | 3001 |
+| Backend  | 3001 |
 | Postgres | 5432 |
-| Redis | 6379 |
-| pgAdmin | 5050 |
+| Redis    | 6379 |
+| pgAdmin  | 5050 |
 
 **Key decisions:**
 
